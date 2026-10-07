@@ -34,6 +34,13 @@
 
   <link rel="stylesheet" href="./styles.css?v=2">
   <style>
+    .supabase-box > div:first-of-type,
+    #btn-copy-sql-schema,
+    #supabase-connect-msg {
+      display: none !important;
+    }
+  </style>
+  <style>
     body:not(.app-ready) {
       visibility: hidden;
     }
@@ -231,7 +238,6 @@
               <div style="font-size: 64px; margin: 24px 0 10px 0;" id="active-quest-emoji">🌳</div>
               <div style="font-size: 14px; color: #aebbb0; margin-bottom: 24px;" id="quest-budget-display">Budget: 30 min</div>
               
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                 <div style="background: rgba(255,255,255,0.06); padding: 12px; border-radius: 9px;">
                   <div style="font-size: 10px; color: #aebbb0; text-transform: uppercase;">Time Elapsed</div>
                   <div style="font-family: 'Fraunces', serif; font-size: 24px; color: var(--paper);" id="quest-timer-display">00:00</div>
@@ -544,19 +550,8 @@
                 <div>
                   <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">AI Engine Mode</label>
                   <select id="ai-engine-select" class="supabase-input" style="margin-top: 4px; margin-bottom: 8px;">
-                    <option value="offline">Built-in Field Guide (Offline / Zero Setup)</option>
-                    <option value="gemma-local">Google Gemma via Ollama (Local: localhost:11434)</option>
                     <option value="google-api">Managed Google AI (server-side credentials)</option>
                   </select>
-                </div>
-
-                <div id="ai-ollama-group" style="display: none;">
-                  <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Ollama URL</label>
-                  <input type="text" id="ai-ollama-url" class="supabase-input" placeholder="http://localhost:11434" value="http://localhost:11434">
-                  
-                  <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Gemma Model</label>
-                  <input type="text" id="ai-gemma-model" class="supabase-input" placeholder="gemma2:2b" value="gemma2:2b">
-                  <span style="font-size: 10px; color: var(--muted); display: block; margin-top: -6px;">Run <code>ollama run gemma2:2b</code> or <code>ollama run paligemma</code> on your machine.</span>
                 </div>
 
                 <div id="ai-google-api-group" style="display: none;">
@@ -588,20 +583,15 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div>
                 <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Supabase Project URL</label>
-                <input type="text" id="supabase-url-input" class="supabase-input" placeholder="https://xyzcompany.supabase.co">
               </div>
               <div>
                 <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Supabase Anon Public API Key</label>
                 <input type="password" id="supabase-key-input" class="supabase-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
               </div>
             </div>
-
             <div style="display: flex; gap: 10px; margin-top: 4px;">
               <button class="button button-outline small" id="btn-logout">
                 Sign out
-              </button>
-              <button class="button button-outline small" id="btn-copy-sql-schema">
-                📋 Copy Supabase SQL Schema
               </button>
             </div>
             
