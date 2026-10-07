@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f28f3b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="SideQuest IRL is a pocket field guide for making your real world more discoverable.">
+  
+  <title>SideQuest IRL — Field Guide</title>
+  
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./assets/sidequest-mark.svg">
+  <link rel="apple-touch-icon" href="./assets/icon.png">
+
+  <!-- Google Fonts: DM Sans & Fraunces (Manus Editorialism) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+
+  <!-- Supabase JS Client for Cloud Persistence -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Canvas Confetti for Level Ups & Discoveries -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <link rel="stylesheet" href="./styles.css?v=2">
+</head>
+<body>
+
+  <div class="app-shell">
+    <!-- Desktop / Tablet Left Sidebar Rail -->
+    <aside class="sidebar">
+      <div class="brand-lockup">
+        <div class="brand-mark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+          </svg>
+          <span class="brand-mark-dot"></span>
+        </div>
+        <div>
+          <div class="brand-name">SideQuest <span>IRL</span></div>
+          <div class="brand-caption">FIELD GUIDE / 001</div>
+        </div>
+      </div>
+      
+      <div class="rail-rule"></div>
+      
+      <div class="nav-label">EXPLORE</div>
+      <nav class="side-nav" aria-label="Primary navigation">
+        <button class="nav-item is-active" data-view="home">
+          <span>Today</span>
+          <small>01</small>
+        </button>
+        <button class="nav-item" data-view="scan">
+          <span>Scan</span>
+          <small>02</small>
+        </button>
+        <button class="nav-item" data-view="pokedex">
+          <span>Pokédex</span>
+          <small>03</small>
+        </button>
+        <button class="nav-item" data-view="adventures">
+          <span>Adventures</span>
+          <small>04</small>
+        </button>
+        <button class="nav-item" data-view="profile">
+          <span>Profile</span>
+          <small>05</small>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="streak-card">
+          <div class="streak-top"><span class="pulse-dot"></span> <span>FIELD STREAK</span></div>
+          <strong id="sidebar-streak-display">04 <em>days</em></strong>
+          <div class="streak-line"><span id="sidebar-streak-bar" style="width: 65%;"></span></div>
+          <p>Two more walks to unlock a new title.</p>
+        </div>
+        <div class="sidebar-foot">
+          <span id="sidebar-city-label">GURUGRAM, IN</span>
+          <span>24° CLEAR</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-context">
+          <span class="topbar-kicker">SIDEQUEST IRL</span>
+          <span class="slash">/</span>
+          <span id="topbar-breadcrumb">Your field notes</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" id="btn-topbar-location" aria-label="Current location" title="Gurugram, IN">
+            📍
+          </button>
+          <button class="avatar-button" id="btn-topbar-profile" aria-label="Open profile">
+            AK
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Page Wrapper -->
+      <div class="page-wrap" id="main-content">
+
+        <!-- SCREEN 1: TODAY / HOME SCREEN -->
+        <section class="screen-view active" id="view-home">
+          <div class="page-intro">
+            <div>
+              <span class="eyebrow" id="today-date-eyebrow">WEDNESDAY · OCT 07, 2026</span>
+              <h1>Make today<br><i>noticeable.</i></h1>
+              <p>Three small reasons to step outside, look closer, and come back with a story.</p>
+            </div>
+            <button class="button button-outline" id="btn-home-scan-find">
+              📸 Scan a find
+            </button>
+          </div>
+
+          <!-- Today Overview: Level Panel + Adventure Memory -->
+          <div class="today-overview">
+            <div class="level-panel">
+              <div class="panel-topline">
+                <span class="eyebrow">CURRENT EXPLORER LEVEL</span>
+                <span class="level-number" id="home-level-num">04</span>
+              </div>
+              <div class="level-copy">
+                <div>
+                  <strong id="home-explorer-title">Explorer</strong>
+                  <span id="home-xp-current-needed">620 / 1,000 XP to Level 5</span>
+                </div>
+                <span style="font-size: 26px;">🏆</span>
+              </div>
+              <div class="progress-track large">
+                <span id="home-xp-progress" style="width: 62%;"></span>
+              </div>
+              <div class="level-footer">
+                <span>⚡ <span id="home-xp-to-next">+380 XP to next level</span></span>
+                <span>QUIETLY CURIOUS</span>
+              </div>
+            </div>
+
+            <div class="memory-panel">
+              <div class="memory-icon">🧠</div>
+              <div>
+                <span class="eyebrow">ADVENTURE MEMORY</span>
+                <strong>Your kind of detour</strong>
+                <p>You keep noticing leafy things and quiet corners. Today’s quests lean that way.</p>
+              </div>
+              <span class="memory-arrow">↗</span>
+            </div>
+          </div>
+
+          <!-- Quests Section Block -->
+          <div class="section-block">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">TODAY’S SIDEQUESTS</span>
+                <h2>Pick a thread to follow.</h2>
+              </div>
+              <span class="section-meta">
+                ✨ QUEST MASTER / 03 FRESH ROUTES
+              </span>
+            </div>
+
+            <!-- Time Filter Selector -->
+            <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">
+              <span style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em;">Time available:</span>
+              <button class="cat-chip" data-time="15">15 min</button>
+              <button class="cat-chip active" data-time="30">30 min</button>
+              <button class="cat-chip" data-time="60">60 min</button>
+            </div>
+
+            <!-- Quest List Container -->
+            <div class="quest-list" id="home-quests-container">
+              <!-- Rendered via JS -->
+            </div>
+
+            <div class="safety-note">
+              <span>ℹ️</span>
+              <span>All quests are designed for daylight, public spaces, and your own comfort. Skip anything that doesn’t feel safe.</span>
+              <span class="shield-badge">SAFE BY DESIGN</span>
+            </div>
+
+            <!-- Small Wins Activity Strip -->
+            <div class="activity-strip">
+              <div>
+                <span class="eyebrow">SMALL WINS</span>
+                <strong>Keep the loop moving.</strong>
+                <p>Log the real-world actions that happen between quests.</p>
+              </div>
+              <div class="activity-actions">
+                <button class="activity-action" id="btn-action-daily-challenge">
+                  <span>✨ Daily challenge</span>
+                  <strong id="status-daily-challenge">+50 XP</strong>
+                </button>
+                <button class="activity-action" id="btn-action-walk-km">
+                  <span>👣 Walk 1 km</span>
+                  <strong id="status-walk-km">+20 XP</strong>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SCREEN 2: ACTIVE QUEST SCREEN -->
+        <section class="screen-view" id="view-quest">
+          <div class="page-intro">
+            <div>
+              <span class="eyebrow" style="color: var(--sage);">OUTDOOR QUEST IN PROGRESS</span>
+              <h1 id="active-quest-title">Nature Scout</h1>
+              <p id="active-quest-desc">Find and photograph a plant you don't recognize. Take a photo from a safe distance.</p>
+            </div>
+            <button class="button button-outline" id="btn-quest-back">
+              ← Back to Today
+            </button>
+          </div>
+
+          <div class="scanner-layout" style="margin-top: 10px;">
+            <div class="level-panel" style="padding: 30px;">
+              <div class="panel-topline">
+                <span class="eyebrow">QUEST METRICS</span>
+                <span class="level-number" id="active-quest-xp">+50 XP</span>
+              </div>
+              <div style="font-size: 64px; margin: 24px 0 10px 0;" id="active-quest-emoji">🌳</div>
+              <div style="font-size: 14px; color: #aebbb0; margin-bottom: 24px;" id="quest-budget-display">Budget: 30 min</div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div style="background: rgba(255,255,255,0.06); padding: 12px; border-radius: 9px;">
+                  <div style="font-size: 10px; color: #aebbb0; text-transform: uppercase;">Time Elapsed</div>
+                  <div style="font-family: 'Fraunces', serif; font-size: 24px; color: var(--paper);" id="quest-timer-display">00:00</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.06); padding: 12px; border-radius: 9px;">
+                  <div style="font-size: 10px; color: #aebbb0; text-transform: uppercase;">Distance Walked</div>
+                  <div style="font-family: 'Fraunces', serif; font-size: 24px; color: var(--paper);" id="quest-distance-display">0.00 km</div>
+                </div>
+              </div>
+
+              <!-- Distance Progress for walk quests -->
+              <div id="quest-walk-progress-card" style="display: none; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #aebbb0; margin-bottom: 6px;">
+                  <span>Distance Target</span>
+                  <span id="quest-walk-target-text">0.00 / 1.00 km</span>
+                </div>
+                <div class="progress-track large">
+                  <span id="quest-walk-fill" style="width: 0%;"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-card" style="display: flex; flex-direction: column; justify-content: center;">
+              <div style="font-size: 32px; margin-bottom: 12px;">📵</div>
+              <span class="eyebrow" style="color: var(--sage);">MINDFUL EXPLORATION</span>
+              <h2 style="font-family: 'Fraunces', serif; font-size: 26px; margin: 8px 0;">Put your phone in your pocket.</h2>
+              <p style="color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 24px;">
+                The real world is the RPG. Only take your phone out when you spot something worth scanning or when you reach your distance.
+              </p>
+
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="button button-primary" id="btn-quest-primary-action">
+                  📸 Open Field Guide Scanner
+                </button>
+                <button class="button button-outline" id="btn-quest-demo-walk">
+                  🎬 Simulate +0.1 km (Demo Walk)
+                </button>
+                <button class="button button-outline" id="btn-quest-abandon" style="color: var(--muted); font-size: 11px;">
+                  Abandon Quest
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SCREEN 3: SCAN SCREEN -->
+        <section class="screen-view" id="view-scan">
+          <div class="page-intro">
+            <div>
+              <span class="eyebrow">FIELD GUIDE / 02</span>
+              <h1>What did<br><i>you find?</i></h1>
+              <p>Point your camera at something that made you pause. The Field Guide will help you put a name to it.</p>
+            </div>
+            <span class="demo-chip"><span class="pulse-dot sage"></span> FIELD GUIDE READY</span>
+          </div>
+
+          <div class="scanner-layout">
+            <!-- Left Scanner Window -->
+            <section class="scanner-window" id="scanner-window-box">
+              <div class="scanner-toolbar">
+                <span>🔍 FIELD GUIDE CAMERA</span>
+                <span>OUTDOOR / DAYLIGHT</span>
+              </div>
+
+              <div class="scan-visual" id="scan-viewfinder-visual">
+                <video id="camera-preview-video" autoplay playsinline muted></video>
+                <img id="captured-preview-img" alt="Captured find" style="display: none;">
+                
+                <div class="scan-corner top-left"></div>
+                <div class="scan-corner top-right"></div>
+                <div class="scan-corner bottom-left"></div>
+                <div class="scan-corner bottom-right"></div>
+
+                <div class="scan-orbit" id="scan-orbit-graphic">
+                  <div class="orbit-dot"></div>
+                  <span style="font-size: 32px;">✨</span>
+                </div>
+                <span class="scan-instruction" id="scan-instruction-text">Place a find inside the frame</span>
+                <span class="scan-subcopy" id="scan-subcopy-text">Plants · birds · flowers · mushrooms · insects · rocks · other</span>
+              </div>
+
+              <div class="scanner-controls">
+                <button class="button button-primary scan-button" id="btn-snap-camera">
+                  📷 Take a photo
+                </button>
+                <label class="button button-outline" style="margin: 0; width: 100%;">
+                  🖼️ Choose photo from device
+                  <input type="file" id="input-file-photo" accept="image/*" capture="environment" style="display: none;">
+                </label>
+                <button class="text-button" id="btn-demo-uncertain" style="margin-top: 6px;">
+                  <span>Try a low-confidence example</span> →
+                </button>
+              </div>
+            </section>
+
+            <!-- Right Scan Result Column -->
+            <section class="scan-result-column" id="scanner-result-column">
+              <!-- Empty state before scan -->
+              <div class="scan-empty-state" id="scan-empty-state-view">
+                <div class="empty-stamp">📖</div>
+                <span class="eyebrow">YOUR NEXT DISCOVERY</span>
+                <h2>The best finds are the ones you almost walked past.</h2>
+                <p>Take a photo to see a confidence-aware result. Add only what feels right to your personal collection.</p>
+                <div class="confidence-legend">
+                  <span><i class="legend-dot confident"></i> Confident match (&gt;80%)</span>
+                  <span><i class="legend-dot possible"></i> Possible match (&lt;80%)</span>
+                </div>
+              </div>
+
+              <!-- Result View Container (Dynamically Rendered) -->
+              <div id="scan-active-result-box" style="display: none; width: 100%;">
+                <!-- ConfidentResult or UncertainResult -->
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- SCREEN 4: POKÉDEX SCREEN -->
+        <section class="screen-view" id="view-pokedex">
+          <div class="page-intro">
+            <div>
+              <span class="eyebrow">FIELD NOTES / 03</span>
+              <h1>Your world,<br><i>collected.</i></h1>
+              <p>Every entry is something you noticed with your own eyes. One species, one place in your personal field guide.</p>
+            </div>
+            <div class="collection-stamp">
+              <span id="dex-total-discovered">23</span>
+              <small>/ 100</small>
+              <label>DISCOVERED</label>
+            </div>
+          </div>
+
+          <section class="collection-summary">
+            <div class="collection-count">
+              <span class="eyebrow">MY POKÉDEX</span>
+              <strong><span id="dex-count-heading">23</span> <small>discoveries</small></strong>
+              <div class="collection-line">
+                <i id="dex-progress-bar" style="width: 23%;"></i>
+              </div>
+              <span class="muted-copy">Your collection is beginning to have a shape.</span>
+            </div>
+
+            <div class="category-counts" id="pokedex-category-counts-row">
+              <div class="category-count">
+                <div class="mini-icon sage">🌳</div>
+                <strong id="cat-count-plant">8</strong>
+                <span>Plants</span>
+              </div>
+              <div class="category-count">
+                <div class="mini-icon sky">🐦</div>
+                <strong id="cat-count-bird">6</strong>
+                <span>Birds</span>
+              </div>
+              <div class="category-count">
+                <div class="mini-icon orange">🦋</div>
+                <strong id="cat-count-insect">4</strong>
+                <span>Insects</span>
+              </div>
+              <div class="category-count">
+                <div class="mini-icon pink">🌸</div>
+                <strong id="cat-count-flower">3</strong>
+                <span>Flowers</span>
+              </div>
+              <div class="category-count">
+                <div class="mini-icon stone">🪨</div>
+                <strong id="cat-count-other">2</strong>
+                <span>Others</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Category Filters and Catalog Toggle -->
+          <div class="pokedex-nav-row">
+            <div class="category-filter-scroll" id="dex-category-filters">
+              <button class="cat-chip active" data-cat="all">✨ All</button>
+              <button class="cat-chip" data-cat="plant">🌳 Plants</button>
+              <button class="cat-chip" data-cat="flower">🌸 Flowers</button>
+              <button class="cat-chip" data-cat="bird">🐦 Birds</button>
+              <button class="cat-chip" data-cat="insect">🦋 Insects</button>
+              <button class="cat-chip" data-cat="mushroom">🍄 Fungi</button>
+              <button class="cat-chip" data-cat="rock">🪨 Rocks</button>
+            </div>
+
+            <div class="pokedex-toggle-tabs">
+              <button class="dex-tab-btn active" id="btn-dex-mode-mine">My Collection</button>
+              <button class="dex-tab-btn" id="btn-dex-mode-guide">Field Guide (100)</button>
+            </div>
+          </div>
+
+          <div class="discovery-grid" id="pokedex-entries-grid">
+            <!-- Rendered via JS -->
+          </div>
+        </section>
+
+        <!-- SCREEN 5: ADVENTURES SCREEN -->
+        <section class="screen-view" id="view-adventures">
+          <div class="page-intro">
+            <div>
+              <span class="eyebrow">TRAIL LOG / 04</span>
+              <h1>The places<br><i>between.</i></h1>
+              <p>A record of the small radius around you — and the moments you chose to look twice.</p>
+            </div>
+            <span class="distance-badge" id="adv-weekly-distance-badge">
+              👣 <span id="adv-stat-km">7.3</span> KM LOGGED
+            </span>
+          </div>
+
+          <section class="adventure-hero">
+            <div class="trail-visual">
+              <div class="trail-skyline">
+                <span>MY EXPLORATION</span>
+                <div class="trail-points">
+                  <i class="point one"></i>
+                  <i class="point two"></i>
+                  <i class="point three"></i>
+                  <i class="point four"></i>
+                  <div class="trail-path"></div>
+                </div>
+                <div class="trail-caption">
+                  <span>📍 <span id="adv-stat-finds">7</span> places noticed</span>
+                  <span>⏱ <span id="adv-stat-min">2h 04m</span> outside</span>
+                </div>
+              </div>
+              <div class="adventure-note">
+                <span class="eyebrow">A NOTE FROM MEMORY</span>
+                <h2>You seem to find more when you slow down.</h2>
+                <p>Your discovery rate is up <strong>28%</strong> on walks under 3 km.</p>
+              </div>
+            </div>
+
+            <!-- Exploration Map Radar Canvas -->
+            <div class="exploration-radar-box">
+              <canvas id="exploration-canvas"></canvas>
+            </div>
+          </section>
+
+          <section class="section-block">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">RECENT OUTINGS</span>
+                <h2>Keep the trail warm.</h2>
+              </div>
+              <span class="section-meta">OCTOBER / 2026</span>
+            </div>
+
+            <div class="outing-list" id="adventures-timeline-container">
+              <!-- Rendered via JS -->
+            </div>
+          </section>
+        </section>
+
+        <!-- SCREEN 6: PROFILE SCREEN -->
+        <section class="screen-view" id="view-profile">
+          <div class="page-intro">
+            <div>
+              <span class="eyebrow">YOUR FIELD KIT / 05</span>
+              <h1>Stay curious,<br><i>on purpose.</i></h1>
+              <p>Shape the kind of adventures you want the Quest Master to bring you next.</p>
+            </div>
+            <button class="button button-outline" id="btn-install-pwa">
+              ➕ Add to home screen
+            </button>
+          </div>
+
+          <div class="profile-grid">
+            <!-- Identity Card -->
+            <section class="profile-card identity-card">
+              <div class="identity-avatar" id="profile-avatar-letters">AK</div>
+              <span class="eyebrow">EXPLORER PROFILE</span>
+              <input type="text" id="profile-name-input" value="Arjun K." style="background: transparent; border: none; font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; color: var(--ink); outline: none; width: 100%; margin: 10px 0 4px 0;">
+              <p>Gurugram, India <span>·</span> Joined Oct 2026</p>
+              
+              <div class="identity-rule"></div>
+              
+              <div class="profile-metrics">
+                <div>
+                  <strong id="profile-stat-xp">620</strong>
+                  <span>TOTAL XP</span>
+                </div>
+                <div>
+                  <strong id="profile-stat-discoveries">23</strong>
+                  <span>DISCOVERIES</span>
+                </div>
+                <div>
+                  <strong id="profile-stat-streak">04</strong>
+                  <span>DAY STREAK</span>
+                </div>
+              </div>
+              
+              <div style="margin-top: 18px; font-size: 10px; color: var(--muted); word-break: break-all;">
+                Device ID: <code id="profile-device-id" style="color: var(--sage);">dev_xxxx</code>
+              </div>
+            </section>
+
+            <!-- Memory Card Large -->
+            <section class="profile-card memory-card-large">
+              <div class="profile-card-heading">
+                <div class="memory-icon">🧠</div>
+                <div>
+                  <span class="eyebrow">ADVENTURE MEMORY</span>
+                  <h2>What should the Quest Master know?</h2>
+                </div>
+              </div>
+
+              <p class="memory-intro">These small signals help future quests feel like they were made for your actual day.</p>
+              
+              <div class="interest-list" id="profile-interests-list">
+                <span>Plants &amp; trees <button>×</button></span>
+                <span>Quiet walks <button>×</button></span>
+                <span>Birdwatching <button>×</button></span>
+                <button class="add-interest" id="btn-add-interest">+ Add an interest</button>
+              </div>
+
+              <div class="memory-footer">
+                <span>✨ Memory is private to this device &amp; cloud account</span>
+                <span class="shield-badge">ANONYMOUS ID</span>
+              </div>
+            </section>
+          </div>
+
+          <!-- Supabase Cloud Storage Section -->
+          <div class="supabase-box">
+            <span class="eyebrow" style="color: var(--orange);">CLOUD PERSISTENCE</span>
+            <h2 style="font-family: 'Fraunces', serif; font-size: 22px; margin: 8px 0;">Supabase Cloud Database</h2>
+            <p style="color: var(--muted); font-size: 12px; line-height: 1.6; margin-bottom: 14px;">
+              Connect your hosted Supabase Postgres database. Each device synchronizes its Pokédex, XP, quests, and adventures under your anonymous device identity.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div>
+                <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Supabase Project URL</label>
+                <input type="text" id="supabase-url-input" class="supabase-input" placeholder="https://xyzcompany.supabase.co">
+              </div>
+              <div>
+                <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Supabase Anon Public API Key</label>
+                <input type="password" id="supabase-key-input" class="supabase-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 4px;">
+              <button class="button button-primary small" id="btn-save-supabase">
+                Save &amp; Connect Cloud
+              </button>
+              <button class="button button-outline small" id="btn-copy-sql-schema">
+                📋 Copy Supabase SQL Schema
+              </button>
+            </div>
+            
+            <div id="supabase-connect-msg" style="font-size: 11px; margin-top: 10px; display: none;"></div>
+          </div>
+
+          <section class="settings-strip" style="margin-top: 32px;">
+            <div>
+              <span class="eyebrow">FIELD SETTINGS</span>
+              <h2>Keep the experience lightweight.</h2>
+            </div>
+            <div class="setting-line">
+              <span><span class="setting-dot on"></span> Outdoor-only quests</span>
+              <button>ON</button>
+            </div>
+            <div class="setting-line">
+              <span><span class="setting-dot on"></span> Confidence notes</span>
+              <button>ON</button>
+            </div>
+            <div class="setting-line">
+              <span><span class="setting-dot"></span> Reset progress</span>
+              <button id="btn-reset-data" style="color: #bd762b;">RESET</button>
+            </div>
+          </section>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Mobile Bottom Navigation Dock (Max-width 820px) -->
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button class="is-active" data-view="home">
+        <span>🧭</span>
+        <span>Today</span>
+      </button>
+      <button data-view="scan">
+        <span>📸</span>
+        <span>Scan</span>
+      </button>
+      <button data-view="pokedex">
+        <span>📖</span>
+        <span>Pokédex</span>
+      </button>
+      <button data-view="adventures">
+        <span>🗺️</span>
+        <span>Adventures</span>
+      </button>
+      <button data-view="profile">
+        <span>🎒</span>
+        <span>Profile</span>
+      </button>
+    </nav>
+
+    <!-- Toast Notification (XP and Actions) -->
+    <div class="toast" id="toast-notification" style="display: none;">
+      <span>✨</span>
+      <span id="toast-message-text">Quest started · 15–30 min outside</span>
+      <button id="btn-toast-dismiss">×</button>
+    </div>
+
+    <!-- PWA Install Modal -->
+    <div class="modal-backdrop" id="install-modal-backdrop" style="display: none;">
+      <div class="install-modal">
+        <button class="modal-close" id="btn-close-install-modal">×</button>
+        <div class="modal-icon">🧭</div>
+        <span class="eyebrow">TAKE IT OUTSIDE</span>
+        <h3>Install your field guide.</h3>
+        <p>Use your browser menu and choose “Add to Home Screen” to keep SideQuest one tap away from your next walk.</p>
+        <button class="button button-primary" id="btn-confirm-install">
+          Got it ✓
+        </button>
+      </div>
+    </div>
+
+    <!-- Species Details Sheet Modal -->
+    <div class="sheet-modal" id="species-detail-sheet">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <button class="button button-outline small" id="btn-close-sheet">✕ Close</button>
+      </div>
+      <div id="sheet-species-content">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Master JavaScript App Controller -->
+  <script type="module" src="./js/app.js?v=2"></script>
+</body>
+</html>

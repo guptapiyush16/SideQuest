@@ -1,0 +1,19 @@
+{
+  "name": "SideQuest IRL",
+  "short_name": "SideQuest",
+  "description": "A pocket field guide for making the real world more discoverable.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f5ef",
+  "theme_color": "#f28f3b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/sidequest-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
