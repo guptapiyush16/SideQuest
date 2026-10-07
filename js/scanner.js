@@ -172,78 +172,13 @@ Return JSON ONLY:
   }
 
   classifyLocalFieldGuide(dataUrl, preferredCategory) {
-    // Select plausible candidates based on catalog
-    const pool = preferredCategory 
-      ? FIELD_GUIDE.filter(s => s.category === preferredCategory)
-      : FIELD_GUIDE;
-
-    // Pick a primary match
-    const primary = pool[Math.floor(Math.random() * pool.length)];
-
-    // 70% chance of high confidence, 30% chance of ambiguous "possible match"
-    const isHighConfidence = Math.random() < 0.68;
-
-    if (isHighConfidence) {
-      const confidence = 85 + Math.floor(Math.random() * 12); // 85% to 96%
-      const candidate = {
-        id: primary.id,
-        name: primary.name,
-        scientific: primary.scientific,
-        category: primary.category,
-        rarity: primary.rarity,
-        region: primary.region,
-        fact: primary.fact,
-        confidence
-      };
-
-      return {
-        status: 'identified',
-        candidates: [candidate],
-        topCandidate: candidate,
-        otherPercentage: 100 - confidence,
-        source: 'field_guide_ai'
-      };
-    } else {
-      // Possible match scenario (e.g. 71% Banyan, 19% Peepal, 10% Other)
-      const sameCategoryPool = FIELD_GUIDE.filter(s => s.category === primary.category && s.id !== primary.id);
-      const secondary = sameCategoryPool.length 
-        ? sameCategoryPool[Math.floor(Math.random() * sameCategoryPool.length)]
-        : FIELD_GUIDE[Math.floor(Math.random() * FIELD_GUIDE.length)];
-
-      const conf1 = 60 + Math.floor(Math.random() * 16); // 60% - 75%
-      const conf2 = Math.min(100 - conf1 - 5, 12 + Math.floor(Math.random() * 14)); // 12% - 25%
-      const other = 100 - conf1 - conf2;
-
-      const candidates = [
-        {
-          id: primary.id,
-          name: primary.name,
-          scientific: primary.scientific,
-          category: primary.category,
-          rarity: primary.rarity,
-          region: primary.region,
-          fact: primary.fact,
-          confidence: conf1
-        },
-        {
-          id: secondary.id,
-          name: secondary.name,
-          scientific: secondary.scientific,
-          category: secondary.category,
-          rarity: secondary.rarity,
-          region: secondary.region,
-          fact: secondary.fact,
-          confidence: conf2
-        }
-      ];
-
-      return {
-        status: 'possible',
-        candidates,
-        topCandidate: candidates[0],
-        otherPercentage: other,
-        source: 'field_guide_ai'
-      };
-    }
+    return {
+      status: 'unsupported',
+      candidates: [],
+      topCandidate: null,
+      otherPercentage: 100,
+      source: 'field_guide',
+      message: 'Offline mode cannot identify the contents of a photo. Choose Managed Google AI or Ollama for image recognition.'
+    };
   }
 }

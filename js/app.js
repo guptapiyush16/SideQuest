@@ -249,11 +249,31 @@ function renderAll() {
   renderProfileScreen();
 }
 
+function getActivityStreak(history = {}) {
+  let streak = 0;
+  const date = new Date();
+  while (true) {
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const day = history[key];
+    const active = day && ((day.distanceKm || 0) > 0 || (day.minutes || 0) > 0 ||
+      (day.discoveries || 0) > 0 || (day.questsCompleted || 0) > 0);
+    if (!active) break;
+    streak++;
+    date.setDate(date.getDate() - 1);
+  }
+  return streak;
+}
+
 // 1. Header & Sidebar Stats Render
 function renderHeader() {
   const state = store.getState();
+  const streak = getActivityStreak(state.history);
   const cityLabel = document.getElementById('sidebar-city-label');
   if (cityLabel) cityLabel.textContent = `${(state.currentLocationName || 'GURUGRAM').toUpperCase()}, IN`;
+  const streakDisplay = document.getElementById('sidebar-streak-display');
+  if (streakDisplay) streakDisplay.innerHTML = `${String(streak).padStart(2, '0')} <em>days</em>`;
+  const streakBar = document.getElementById('sidebar-streak-bar');
+  if (streakBar) streakBar.style.width = `${Math.min(100, streak * 25)}%`;
 
   const avatar = document.getElementById('btn-topbar-profile');
   const avatarLetters = document.getElementById('profile-avatar-letters');
@@ -483,6 +503,29 @@ async function analyzeCapturedPhoto(dataUrl) {
 
 function renderScanResult(analysis) {
   const resultBox = document.getElementById('scan-active-result-box');
+  if (!analysis?.topCandidate) {
+    resultBox.innerHTML = `
+      <div class="result-card uncertain-result">
+        <div class="result-top">
+          <span class="result-state possible-state"><span class="confidence-dot"></span> NEEDS AI VISION</span>
+        </div>
+        <div class="possible-heading">
+          <div class="result-species-icon lilac">📷</div>
+          <div>
+            <h2>We need a clearer answer.</h2>
+            <p>${analysis?.message || 'This photo could not be identified safely.'}</p>
+          </div>
+        </div>
+        <div class="result-disclaimer">
+          <span>ℹ️</span>
+          <span>We will not guess a species from an image we cannot analyze.</span>
+        </div>
+        <button class="button button-outline full" id="btn-scan-retry">📷 Try another photo</button>
+      </div>
+    `;
+    document.getElementById('btn-scan-retry').addEventListener('click', startCameraFeed);
+    return;
+  }
   const top = analysis.topCandidate;
   const cat = categoryMeta[top.category] || categoryMeta.other;
   const existing = store.getState().pokedex[top.id];
@@ -927,6 +970,7 @@ function renderExplorationCanvas() {
 function renderProfileScreen() {
   const state = store.getState();
   const lvl = store.getLevelInfo();
+  const streak = getActivityStreak(state.history);
 
   const nameInput = document.getElementById('profile-name-input');
   if (nameInput && nameInput.value !== state.name) {
@@ -935,6 +979,7 @@ function renderProfileScreen() {
 
   document.getElementById('profile-stat-xp').textContent = lvl.totalXp;
   document.getElementById('profile-stat-discoveries').textContent = Object.keys(state.pokedex).length;
+  document.getElementById('profile-stat-streak').textContent = String(streak).padStart(2, '0');
   document.getElementById('profile-device-id').textContent = getAnonymousDeviceId();
 
   // Google Gemma & AI Engine Configuration
