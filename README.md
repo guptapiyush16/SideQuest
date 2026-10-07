@@ -158,7 +158,7 @@ For production deployment, use the server-side OpenRouter integration:
 
 1. Create an API key at [openrouter.ai](https://openrouter.ai).
 2. Add it to Render as `OPEN_ROUTER_APIKEY`.
-3. Set `OPENROUTER_MODEL` to `google/gemma-4-26b-a4b-it:free`.
+3. Set `OPENROUTER_MODEL` to `openrouter/free`.
 4. Redeploy the service and use **Test Connection** in the Profile screen.
 
 The browser calls the SideQuest server, and the server calls OpenRouter. The API key is never exposed to users.
