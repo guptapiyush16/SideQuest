@@ -28,7 +28,7 @@ let toastTimeout = null;
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=3').catch(err => {
+    navigator.serviceWorker.register('./sw.js?v=4').catch(err => {
       console.log('SW registration note:', err);
     });
   });
@@ -68,11 +68,11 @@ async function bootApp() {
     }
   });
 
-  // Initial UI Render
-  renderAll();
-
   // Load only the authenticated user's cloud data.
   await store.loadFromCloud();
+
+  renderAll();
+  document.body.classList.add('app-ready');
 
   // Subscribe to store updates
   store.subscribe(() => {
@@ -99,6 +99,7 @@ function showAuthScreen() {
       <p id="auth-message" style="font-size:12px;color:#d66b3d;"></p>
     </form>`;
   document.body.appendChild(overlay);
+    document.body.classList.add('app-ready');
   const form = overlay.querySelector('#auth-form');
   const message = overlay.querySelector('#auth-message');
   const submit = async (mode) => {

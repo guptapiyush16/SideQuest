@@ -121,19 +121,20 @@ export class GameStore {
       console.warn('LocalStorage save failed:', e);
     }
 
-    resetToEmpty() {
-      this.state = this.loadInitialState();
-      this.state.name = 'Explorer';
-      this.state.xp = 0;
-      this.state.pokedex = {};
-      this.state.todayQuests = [];
-      this.state.activeQuestId = null;
-      this.state.activeQuestData = null;
-      this.state.history = {};
-      this.state.dailyBonusClaimed = false;
-      this.save();
-    }
     this.notify();
+  }
+
+  resetToEmpty() {
+    this.state = this.loadInitialState();
+    this.state.name = 'Explorer';
+    this.state.xp = 0;
+    this.state.pokedex = {};
+    this.state.todayQuests = [];
+    this.state.activeQuestId = null;
+    this.state.activeQuestData = null;
+    this.state.history = {};
+    this.state.dailyBonusClaimed = false;
+    this.save();
   }
 
   subscribe(fn) {

@@ -1,5 +1,5 @@
 // SideQuest IRL — Service Worker for Offline PWA
-const CACHE_NAME = 'sidequest-v3';
+const CACHE_NAME = 'sidequest-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
