@@ -7,10 +7,10 @@ import { ScannerEngine } from './scanner.js';
 import { FIELD_GUIDE, categoryMeta, findFieldGuideMatch } from './fieldGuide.js';
 import { 
   getAnonymousDeviceId, 
-  getSupabaseConfig, 
-  saveSupabaseConfig, 
   initSupabaseClient,
-  testSupabaseConnection, 
+  login,
+  register,
+  logout,
   SUPABASE_SETUP_SQL 
 } from './supabaseClient.js';
 
@@ -36,15 +36,16 @@ if ('serviceWorker' in navigator) {
 
 // Global Startup
 document.addEventListener('DOMContentLoaded', async () => {
-  initSupabaseClient();
+  const user = await initSupabaseClient();
+  if (!user) return showAuthScreen();
+  bootApp();
+});
+
+function bootApp() {
   initGeolocationTracker();
   bindEventHandlers();
-  
-  // Seed demo state if brand new
+
   const state = store.getState();
-  if (state.xp === 0 && Object.keys(state.pokedex).length === 0) {
-    seedInitialDemoState();
-  }
 
   // Ensure quests are generated
   if (!state.todayQuests || state.todayQuests.length === 0) {
@@ -70,44 +71,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initial UI Render
   renderAll();
 
-  // Try loading cloud data if Supabase is connected
-  store.loadFromCloud();
+  // Load only the authenticated user's cloud data.
+  await store.loadFromCloud();
 
   // Subscribe to store updates
   store.subscribe(() => {
     renderAll();
   });
-});
+}
 
-function seedInitialDemoState() {
-  const seedNames = [
-    { name: 'Snake Plant', scientific: 'Dracaena trifasciata', cat: 'plant', place: 'Gurugram', rarity: 1 },
-    { name: 'Rose-ringed Parakeet', scientific: 'Psittacula krameri', cat: 'bird', place: 'Gurugram', rarity: 2 },
-    { name: 'Bougainvillea', scientific: 'Bougainvillea glabra', cat: 'flower', place: 'Gurugram', rarity: 1 },
-    { name: 'Quartz Crystal', scientific: 'Silicon dioxide', cat: 'rock', place: 'Aravalli trail', rarity: 2 },
-    { name: 'Neem', scientific: 'Azadirachta indica', cat: 'plant', place: 'Gurugram', rarity: 1 },
-  ];
-
-  seedNames.forEach(s => {
-    store.addDiscovery({
-      candidate: { name: s.name, scientific: s.scientific, category: s.cat, rarity: s.rarity, confidence: 92 },
-      locationName: s.place
-    });
+function showAuthScreen() {
+  const overlay = document.createElement('div');
+  overlay.id = 'auth-screen';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;background:#f7f5ef;display:grid;place-items:center;padding:24px;';
+  overlay.innerHTML = `
+    <form id="auth-form" style="width:min(420px,100%);padding:28px;border:1px solid #d9dfd4;border-radius:16px;background:#fff;">
+      <span class="eyebrow">SIDEQUEST IRL</span>
+      <h1 style="font-family:Fraunces,serif;margin:10px 0;">Your field journal.</h1>
+      <p style="color:#748078;font-size:13px;">Sign in to keep your quests, discoveries, and photos private.</p>
+      <input id="auth-email" type="email" required autocomplete="email" placeholder="Email" class="supabase-input">
+      <input id="auth-password" type="password" required minlength="8" autocomplete="current-password" placeholder="Password (8+ characters)" class="supabase-input">
+      <input id="auth-name" type="text" autocomplete="name" placeholder="Name (only needed for sign up)" class="supabase-input">
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="button button-primary" type="submit" data-mode="login">Sign in</button>
+        <button class="button button-outline" type="button" id="auth-register">Create account</button>
+      </div>
+      <p id="auth-message" style="font-size:12px;color:#d66b3d;"></p>
+    </form>`;
+  document.body.appendChild(overlay);
+  const form = overlay.querySelector('#auth-form');
+  const message = overlay.querySelector('#auth-message');
+  const submit = async (mode) => {
+    const email = overlay.querySelector('#auth-email').value;
+    const password = overlay.querySelector('#auth-password').value;
+    const name = overlay.querySelector('#auth-name').value;
+    try {
+      message.textContent = 'Connecting…';
+      if (mode === 'register') await register(email, password, name);
+      else await login(email, password);
+      overlay.remove();
+      store.resetToEmpty();
+      bootApp();
+    } catch (error) {
+      message.textContent = error.message;
+    }
+  };
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submit('login');
   });
-
-  // Seed baseline XP and initial outings
-  store.state.xp = 620;
-  store.state.name = 'Arjun K.';
-  
-  const todayKey = new Date().toISOString().split('T')[0];
-  const yesterdayKey = new Date(Date.now() - 864e5).toISOString().split('T')[0];
-  const twoDaysAgoKey = new Date(Date.now() - 864e5 * 3).toISOString().split('T')[0];
-
-  store.state.history[todayKey] = { distanceKm: 2.4, minutes: 38, discoveries: 4, newDiscoveries: 2, questsCompleted: 3, points: [] };
-  store.state.history[yesterdayKey] = { distanceKm: 1.8, minutes: 27, discoveries: 2, newDiscoveries: 1, questsCompleted: 2, points: [] };
-  store.state.history[twoDaysAgoKey] = { distanceKm: 3.1, minutes: 51, discoveries: 6, newDiscoveries: 2, questsCompleted: 3, points: [] };
-  
-  store.save();
+  overlay.querySelector('#auth-register').addEventListener('click', () => submit('register'));
 }
 
 // View Navigation Router
@@ -923,12 +936,6 @@ function renderProfileScreen() {
   document.getElementById('profile-stat-discoveries').textContent = Object.keys(state.pokedex).length;
   document.getElementById('profile-device-id').textContent = getAnonymousDeviceId();
 
-  const cfg = getSupabaseConfig();
-  const urlInput = document.getElementById('supabase-url-input');
-  const keyInput = document.getElementById('supabase-key-input');
-  if (urlInput && !urlInput.value) urlInput.value = cfg.url || '';
-  if (keyInput && !keyInput.value) keyInput.value = cfg.key || '';
-
   // Google Gemma & AI Engine Configuration
   const engineSelect = document.getElementById('ai-engine-select');
   const ollamaGroup = document.getElementById('ai-ollama-group');
@@ -1124,28 +1131,11 @@ function bindEventHandlers() {
     });
   }
 
-  // Profile: Supabase Save & Connect
-  const saveSupabase = document.getElementById('btn-save-supabase');
-  if (saveSupabase) {
-    saveSupabase.addEventListener('click', async () => {
-      const url = document.getElementById('supabase-url-input').value.trim();
-      const key = document.getElementById('supabase-key-input').value.trim();
-      const msg = document.getElementById('supabase-connect-msg');
-      msg.style.display = 'block';
-      msg.style.color = 'var(--muted)';
-      msg.textContent = 'Testing connection…';
-
-      try {
-        await testSupabaseConnection(url, key);
-        saveSupabaseConfig({ url, key, enabled: true });
-        msg.style.color = 'var(--sage)';
-        msg.textContent = '✅ Connected to Supabase! Anonymous sync active.';
-        showToast('Supabase cloud sync active');
-        store.save();
-      } catch (err) {
-        msg.style.color = 'var(--orange)';
-        msg.textContent = 'Connection test failed: ' + (err.message || 'Check URL/Key');
-      }
+  const logoutButton = document.getElementById('btn-logout');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', () => {
+      logout();
+      window.location.reload();
     });
   }
 

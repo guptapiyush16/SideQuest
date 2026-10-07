@@ -5,7 +5,7 @@
 
 ---
 
-The repository contains one canonical app: the browser PWA in `index.html`, `styles.css`, `js/`, `assets/`, and `api/`.
+The repository contains one canonical app: the browser PWA in `index.html`, `styles.css`, `js/`, `assets/`, and the Node/Express API in `server.js`.
 
 ## 📱 How to Run & Install as a Mobile PWA
 
@@ -13,16 +13,40 @@ The repository contains one canonical app: the browser PWA in `index.html`, `sty
 The app is currently running on **`http://localhost:3000`**.  
 To restart the server at any time:
 ```bash
-npx serve -l 3000 .
+npm install
+npm start
 ```
 
-The offline and curated modes work on a static host. The managed Google AI mode requires a host that supports the included serverless function, such as Vercel.
+The server loads local development values from `atlas-credentials.env`. Keep that file private. For Render, configure the same variables in the service environment.
+
+The PWA and API run from the same origin. Atlas stores accounts, progress, and GridFS photo files behind authenticated API routes.
 
 ### Managed AI deployment
 
 Configure `GOOGLE_GENERATIVE_AI_KEY` as a server-side environment variable. Do not add it to the repository, HTML, JavaScript, local storage, or a client-side build. Optionally set `GOOGLE_GENERATIVE_AI_MODEL`.
 
-The PWA calls `/api/ai` for quest generation, image identification, and health checks. The function forwards requests to Google AI Studio without exposing the credential to the browser. Use the offline or local Ollama mode when deploying to a static-only host.
+The PWA calls `/api/ai` for quest generation, image identification, and health checks. The server forwards requests to Google AI Studio without exposing the credential to the browser.
+
+### MongoDB Atlas and accounts
+
+Set these server variables:
+
+```text
+MONGODB_URI=mongodb+srv://...
+MONGODB_DB=sidequest
+AUTH_SECRET=long-random-secret
+GOOGLE_GENERATIVE_AI_KEY=...
+```
+
+Users create accounts with email and password. Every new account starts with zero XP, an empty Pokédex, no quests, and no adventure history. Captured photos are compressed in the browser and stored in MongoDB GridFS; the database stores the associated GridFS file ID with each discovery.
+
+The demo account created for local testing is:
+
+```text
+Email: demo@sidequest.app
+```
+
+Use the password generated during setup rather than committing it to the repository. Change or delete this account before production launch.
 
 ### 2. Install on Your Phone (PWA)
 1. Ensure your phone is connected to the same Wi-Fi network as your computer.
@@ -162,9 +186,9 @@ Each device generates a permanent unique device ID (`dev_xxxx`) stored in `local
 Click the **"Copy SQL Schema"** button in the app (or copy below) and paste it into the **Supabase SQL Editor** (`https://supabase.com/dashboard/project/_/sql`):
 
 ```sql
--- 1. Profiles Table (Anonymous device ID)
+-- 1. Profiles Table (Supabase anonymous-authenticated user)
 CREATE TABLE IF NOT EXISTS profiles (
-  id TEXT PRIMARY KEY,
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT DEFAULT 'Explorer',
   xp INTEGER DEFAULT 0,
   level INTEGER DEFAULT 1,
@@ -187,6 +211,7 @@ CREATE TABLE IF NOT EXISTS pokedex_entries (
   lat DOUBLE PRECISION,
   lng DOUBLE PRECISION,
   photo_data TEXT,
+  photo_path TEXT,
   first_seen TIMESTAMPTZ DEFAULT NOW(),
   last_seen TIMESTAMPTZ DEFAULT NOW()
 );
@@ -194,7 +219,7 @@ CREATE TABLE IF NOT EXISTS pokedex_entries (
 -- 3. Quests Log
 CREATE TABLE IF NOT EXISTS quests (
   id TEXT PRIMARY KEY,
-  user_id TEXT REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   emoji TEXT,
@@ -208,7 +233,7 @@ CREATE TABLE IF NOT EXISTS quests (
 -- 4. Adventure History
 CREATE TABLE IF NOT EXISTS adventures (
   id TEXT PRIMARY KEY,
-  user_id TEXT REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   date_key TEXT NOT NULL,
   distance_km DOUBLE PRECISION DEFAULT 0,
   minutes INTEGER DEFAULT 0,
@@ -224,8 +249,17 @@ ALTER TABLE pokedex_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE adventures ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow anon read/write profiles" ON profiles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow anon read/write pokedex" ON pokedex_entries FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow anon read/write quests" ON quests FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow anon read/write adventures" ON adventures FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Own profile" ON profiles FOR ALL USING (id = auth.uid()) WITH CHECK (id = auth.uid());
+CREATE POLICY "Own pokedex" ON pokedex_entries FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Own quests" ON quests FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Own adventures" ON adventures FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('discovery-photos', 'discovery-photos', false)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Users manage own discovery photos"
+ON storage.objects FOR ALL TO authenticated
+USING (bucket_id = 'discovery-photos' AND (storage.foldername(name))[1] = auth.uid()::text)
+WITH CHECK (bucket_id = 'discovery-photos' AND (storage.foldername(name))[1] = auth.uid()::text);
 ```
