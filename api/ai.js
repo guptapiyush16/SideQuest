@@ -1,9 +1,10 @@
 const MODEL = (process.env.OPENROUTER_MODEL || 'openrouter/free').replace(/\\/g, '/');
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-const VISION_PROMPT = `Identify the primary natural species or object (plant, flower, bird, insect, mushroom, or rock) in this photo.
+const VISION_PROMPT = `Identify the primary visible subject in this photo. It may be an animal (including dog or cat), plant, flower, bird, insect, mushroom, or rock.
+Do not guess a bird or plant when the image shows a mammal. If the image is a screenshot, phone display, person, or unrelated object, set subject_found to false.
 Output JSON ONLY with this format:
-{"subject_found":true,"candidates":[{"common_name":"Species Name","scientific_name":"Scientific name","category":"plant|flower|bird|insect|mushroom|rock","confidence":91}],"region":"Native region or habitat","fun_fact":"One interesting sentence about this find."}`;
+{"subject_found":true,"candidates":[{"common_name":"Species Name","scientific_name":"Scientific name","category":"animal|plant|flower|bird|insect|mushroom|rock","confidence":91}],"region":"Native region or habitat","fun_fact":"One interesting sentence about this find."}`;
 
 const QUEST_PROMPT = ({ interests, minutes, locationName }) => `You are the Quest Master for the outdoor exploration game "SideQuest IRL".
 Generate exactly 3 safe, fun outdoor quests for an explorer in ${locationName || 'their local city'}.
