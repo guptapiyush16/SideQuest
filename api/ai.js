@@ -53,10 +53,16 @@ async function callOpenRouter(messages) {
 function modelJson(data) {
   const text = data?.choices?.[0]?.message?.content;
   if (!text) throw new Error('AI returned no content');
-  const normalized = typeof text === 'string'
+  let normalized = typeof text === 'string'
     ? text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
     : text;
-  return typeof normalized === 'string' ? JSON.parse(normalized) : normalized;
+  if (typeof normalized === 'string') {
+    const start = normalized.indexOf('{');
+    const end = normalized.lastIndexOf('}');
+    if (start >= 0 && end > start) normalized = normalized.slice(start, end + 1);
+    return JSON.parse(normalized);
+  }
+  return normalized;
 }
 
 module.exports = async function handler(req, res) {
