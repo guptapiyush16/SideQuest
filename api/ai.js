@@ -21,14 +21,24 @@ function json(res, status, body) {
 async function callGoogle(payload) {
   const key = process.env.GOOGLE_GENERATIVE_AI_KEY;
   if (!key) throw new Error('AI service is not configured');
-  const response = await fetch(`${API_BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`Google AI HTTP ${response.status}: ${text.slice(0, 200)}`);
-  return JSON.parse(text);
+  const url = `${API_BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+  let lastError;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const text = await response.text();
+    if (response.ok) return JSON.parse(text);
+
+    lastError = new Error(`Google AI HTTP ${response.status}: ${text.slice(0, 200)}`);
+    if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 2) break;
+    await new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)));
+  }
+
+  throw lastError;
 }
 
 function modelJson(data) {

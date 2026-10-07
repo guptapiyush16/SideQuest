@@ -57,6 +57,7 @@ export class ScannerEngine {
 
   async analyzePhoto(dataUrl, { aiSettings = {}, preferredCategory = null } = {}) {
     const mode = aiSettings?.mode || 'offline';
+    let visionError = null;
 
     // 1. Google Gemini / Gemma Vision API
     if (mode === 'google-api') {
@@ -64,6 +65,7 @@ export class ScannerEngine {
         const googleResult = await this.callGoogleVision(dataUrl);
         if (googleResult) return googleResult;
       } catch (err) {
+        visionError = err;
         console.warn('Google vision API failed, falling back to local Field Guide classifier:', err.message);
       }
     }
@@ -79,7 +81,9 @@ export class ScannerEngine {
     }
 
     // 3. Built-in high quality Field Guide Classifier
-    return this.classifyLocalFieldGuide(dataUrl, preferredCategory);
+    const fallback = this.classifyLocalFieldGuide(dataUrl, preferredCategory);
+    if (visionError) fallback.message = 'Managed Google AI is temporarily unavailable. Please try scanning again in a moment.';
+    return fallback;
   }
 
   async callGoogleVision(dataUrl) {
