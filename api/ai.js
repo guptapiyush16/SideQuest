@@ -1,4 +1,4 @@
-const MODEL = process.env.OPENROUTER_MODEL || 'openrouter/free';
+const MODEL = (process.env.OPENROUTER_MODEL || 'openrouter/free').replace(/\\/g, '/');
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const VISION_PROMPT = `Identify the primary natural species or object (plant, flower, bird, insect, mushroom, or rock) in this photo.

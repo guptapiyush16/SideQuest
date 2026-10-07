@@ -59,11 +59,11 @@ export class ScannerEngine {
     const mode = 'google-api';
     let visionError = null;
 
-    // 1. Google Gemini / Gemma Vision API
+    // 1. Managed vision API
     if (mode === 'google-api') {
       try {
-        const googleResult = await this.callGoogleVision(dataUrl);
-        if (googleResult) return googleResult;
+        const visionResult = await this.callGoogleVision(dataUrl);
+        if (visionResult) return visionResult;
       } catch (err) {
         visionError = err;
         console.warn('Google vision API failed, falling back to local Field Guide classifier:', err.message);
@@ -101,8 +101,10 @@ export class ScannerEngine {
 
     if (!res.ok) throw new Error('Managed vision API HTTP ' + res.status);
     const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    const parsed = JSON.parse(rawText);
+    const rawText = data?.choices?.[0]?.message?.content;
+    if (!rawText) throw new Error('Managed vision API returned no content');
+    const normalized = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(normalized);
     return this.formatVisionResult(parsed);
   }
 
