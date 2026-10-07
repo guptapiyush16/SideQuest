@@ -1,5 +1,5 @@
-const MODEL = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-3.8-flash';
-const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const MODEL = process.env.OPENROUTER_MODEL || 'google/gemma-4-26b-a4b-it:free';
+const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const VISION_PROMPT = `Identify the primary natural species or object (plant, flower, bird, insect, mushroom, or rock) in this photo.
 Output JSON ONLY with this format:
@@ -18,22 +18,30 @@ function json(res, status, body) {
   res.status(status).json(body);
 }
 
-async function callGoogle(payload) {
-  const key = process.env.GOOGLE_GENERATIVE_AI_KEY;
+async function callOpenRouter(messages) {
+  const key = process.env.OPEN_ROUTER_APIKEY || process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error('AI service is not configured');
-  const url = `${API_BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`;
   let lastError;
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    const response = await fetch(url, {
+    const response = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://sidequest-0kzp.onrender.com',
+        'X-OpenRouter-Title': 'SideQuest IRL'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        temperature: 0.1
+      })
     });
     const text = await response.text();
     if (response.ok) return JSON.parse(text);
 
-    lastError = new Error(`Google AI HTTP ${response.status}: ${text.slice(0, 200)}`);
+    lastError = new Error(`OpenRouter HTTP ${response.status}: ${text.slice(0, 200)}`);
     if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 2) break;
     await new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)));
   }
@@ -42,9 +50,12 @@ async function callGoogle(payload) {
 }
 
 function modelJson(data) {
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = data?.choices?.[0]?.message?.content;
   if (!text) throw new Error('AI returned no content');
-  return JSON.parse(text);
+  const normalized = typeof text === 'string'
+    ? text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+    : text;
+  return typeof normalized === 'string' ? JSON.parse(normalized) : normalized;
 }
 
 module.exports = async function handler(req, res) {
@@ -53,21 +64,28 @@ module.exports = async function handler(req, res) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     if (body.operation === 'health') {
-      if (!process.env.GOOGLE_GENERATIVE_AI_KEY) return json(res, 503, { error: 'AI service is not configured' });
-      return json(res, 200, { ok: true });
+      if (!process.env.OPEN_ROUTER_APIKEY && !process.env.OPENROUTER_API_KEY) {
+        return json(res, 503, { error: 'OpenRouter AI service is not configured' });
+      }
+      return json(res, 200, { ok: true, provider: 'openrouter', model: MODEL });
     }
 
     if (body.operation === 'vision') {
       if (typeof body.imageBase64 !== 'string' || body.imageBase64.length < 100 || body.imageBase64.length > 12_000_000) {
         return json(res, 400, { error: 'Invalid image payload' });
       }
-      const data = await callGoogle({
-        contents: [{ parts: [
-          { text: VISION_PROMPT },
-          { inline_data: { mime_type: body.mimeType || 'image/jpeg', data: body.imageBase64 } }
-        ] }],
-        generationConfig: { responseMimeType: 'application/json' }
-      });
+      const data = await callOpenRouter([{
+        role: 'user',
+        content: [
+          { type: 'text', text: VISION_PROMPT },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:${body.mimeType || 'image/jpeg'};base64,${body.imageBase64}`
+            }
+          }
+        ]
+      }]);
       return json(res, 200, modelJson(data));
     }
 
@@ -75,10 +93,10 @@ module.exports = async function handler(req, res) {
       const interests = Array.isArray(body.interests) ? body.interests.slice(0, 10).map(String) : [];
       const minutes = Math.min(60, Math.max(10, Number(body.minutes) || 30));
       const locationName = typeof body.locationName === 'string' ? body.locationName.slice(0, 80) : '';
-      const data = await callGoogle({
-        contents: [{ parts: [{ text: QUEST_PROMPT({ interests, minutes, locationName }) }] }],
-        generationConfig: { responseMimeType: 'application/json' }
-      });
+      const data = await callOpenRouter([{
+        role: 'user',
+        content: QUEST_PROMPT({ interests, minutes, locationName })
+      }]);
       return json(res, 200, modelJson(data));
     }
 

@@ -1216,7 +1216,7 @@ function bindEventHandlers() {
       if (statusEl) {
         statusEl.style.display = 'block';
         statusEl.style.color = 'var(--sage)';
-        statusEl.textContent = '✅ Saved: Managed Google AI is active.';
+        statusEl.textContent = '✅ Saved: Managed OpenRouter AI is active.';
       }
       showToast('AI engine settings saved');
     });
@@ -1241,7 +1241,7 @@ function bindEventHandlers() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         statusEl.style.color = 'var(--sage)';
-        statusEl.textContent = '✅ Managed Google AI service is ready.';
+        statusEl.textContent = '✅ Managed OpenRouter AI service is ready.';
       } catch (err) {
         statusEl.style.color = 'var(--orange)';
         statusEl.textContent = `⚠️ API Key check failed: ${err.message}`;

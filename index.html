@@ -550,12 +550,12 @@
                 <div>
                   <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">AI Engine Mode</label>
                   <select id="ai-engine-select" class="supabase-input" style="margin-top: 4px; margin-bottom: 8px;">
-                    <option value="google-api">Managed Google AI (server-side credentials)</option>
+                    <option value="google-api">Managed OpenRouter AI (server-side credentials)</option>
                   </select>
                 </div>
 
                 <div id="ai-google-api-group" style="display: none;">
-                  <span style="font-size: 10px; color: var(--muted); display: block; margin-top: 4px;">The production API credential is kept on the server. Configure <code>GOOGLE_GENERATIVE_AI_KEY</code> in your deployment environment.</span>
+                  <span style="font-size: 10px; color: var(--muted); display: block; margin-top: 4px;">The production API credential is kept on the server. Configure <code>OPEN_ROUTER_APIKEY</code> in Render.</span>
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center;">
@@ -566,8 +566,8 @@
               </div>
 
               <div class="memory-footer" style="margin-top: 22px;">
-                <span>⚡ Powered by Google Gemma 2 &amp; PaliGemma</span>
-                <span class="shield-badge">OPEN WEIGHTS</span>
+                <span>⚡ Powered by OpenRouter vision AI</span>
+                <span class="shield-badge">SERVER-SIDE</span>
               </div>
             </section>
           </div>

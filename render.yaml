@@ -12,7 +12,7 @@ services:
         value: sidequest
       - key: AUTH_SECRET
         generateValue: true
-      - key: GOOGLE_GENERATIVE_AI_KEY
+      - key: OPEN_ROUTER_APIKEY
         sync: false
-      - key: GOOGLE_GENERATIVE_AI_MODEL
-        value: gemini-3.8-flash
+      - key: OPENROUTER_MODEL
+        value: google/gemma-4-26b-a4b-it:free

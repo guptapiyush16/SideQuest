@@ -23,9 +23,9 @@ The PWA and API run from the same origin. Atlas stores accounts, progress, and G
 
 ### Managed AI deployment
 
-Configure `GOOGLE_GENERATIVE_AI_KEY` as a server-side environment variable. Do not add it to the repository, HTML, JavaScript, local storage, or a client-side build. Optionally set `GOOGLE_GENERATIVE_AI_MODEL`.
+Configure `OPEN_ROUTER_APIKEY` as a server-side environment variable. Do not add it to the repository, HTML, JavaScript, local storage, or a client-side build. The default model is `google/gemma-4-26b-a4b-it:free`; optionally override it with `OPENROUTER_MODEL`.
 
-The PWA calls `/api/ai` for quest generation, image identification, and health checks. The server forwards requests to Google AI Studio without exposing the credential to the browser.
+The PWA calls `/api/ai` for quest generation, image identification, and health checks. The server forwards requests to OpenRouter without exposing the credential to the browser.
 
 ### MongoDB Atlas and accounts
 
@@ -35,7 +35,8 @@ Set these server variables:
 MONGODB_URI=mongodb+srv://...
 MONGODB_DB=sidequest
 AUTH_SECRET=long-random-secret
-GOOGLE_GENERATIVE_AI_KEY=...
+OPEN_ROUTER_APIKEY=...
+OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
 ```
 
 Users create accounts with email and password. Every new account starts with zero XP, an empty Pokédex, no quests, and no adventure history. Captured photos are compressed in the browser and stored in MongoDB GridFS; the database stores the associated GridFS file ID with each discovery.
@@ -152,16 +153,15 @@ Run Gemma directly on your laptop or phone local network with zero cloud API key
 
 ---
 
-#### Option B: Use Google AI Studio Cloud API (Zero Local RAM)
-If your device has limited RAM or you prefer instant cloud inference:
+#### Managed vision AI with OpenRouter
+For production deployment, use the server-side OpenRouter integration:
 
-1. Visit [aistudio.google.com](https://aistudio.google.com) and click **Get API Key** (Free tier available).
-2. Open SideQuest IRL → Tap **🎒 Profile** tab.
-3. Under **Connect Google Gemma**, select:  
-   `Google Gemini / Gemma API (Google AI Studio Key)`.
-4. Paste your key into the **Google AI Studio API Key** field.
-5. Click **"Test Connection"** → You will see `✅ Connected to Google AI Studio successfully!`.
-6. Click **"Save AI Settings"**.
+1. Create an API key at [openrouter.ai](https://openrouter.ai).
+2. Add it to Render as `OPEN_ROUTER_APIKEY`.
+3. Set `OPENROUTER_MODEL` to `google/gemma-4-26b-a4b-it:free`.
+4. Redeploy the service and use **Test Connection** in the Profile screen.
+
+The browser calls the SideQuest server, and the server calls OpenRouter. The API key is never exposed to users.
 
 ---
 
