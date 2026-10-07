@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   bootApp();
 });
 
-function bootApp() {
+async function bootApp() {
   initGeolocationTracker();
   bindEventHandlers();
 
