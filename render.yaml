@@ -15,4 +15,6 @@ services:
       - key: OPEN_ROUTER_APIKEY
         sync: false
       - key: OPENROUTER_MODEL
-        value: openrouter/free
+        value: google/gemini-2.5-flash
+      - key: GEMINI_API_KEY
+        sync: false

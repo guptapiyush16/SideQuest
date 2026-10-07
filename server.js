@@ -7,6 +7,7 @@ const multer = require('multer');
 const { MongoClient, GridFSBucket, ObjectId } = require('mongodb');
 const aiHandler = require('./api/ai.js');
 require('dotenv').config({ path: path.join(__dirname, 'atlas-credentials.env') });
+require('dotenv').config();
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -17,7 +18,8 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 *
 let db;
 let photos;
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ limit: '15mb', extended: true }));
 app.use(express.static(__dirname, { extensions: ['html'] }));
 app.post('/api/ai', aiHandler);
 

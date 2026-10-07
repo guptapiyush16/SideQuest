@@ -1,6 +1,13 @@
+function getOpenRouterKey() {
+  return process.env.OPEN_ROUTER_APIKEY || process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_API_KEY;
+}
+
+function getGeminiKey() {
+  return process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_KEY || process.env.GOOGLE_API_KEY;
+}
+
 const MODEL = (process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash').replace(/\\/g, '/');
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 
 const VISION_PROMPT = `Identify the primary visible subject in this photo. It may be an animal (including dog or cat), plant, flower, bird, insect, mushroom, or rock.
@@ -22,8 +29,9 @@ function json(res, status, body) {
 }
 
 async function callGeminiDirect({ promptText, imageBase64, mimeType }) {
-  if (!GEMINI_KEY) throw new Error('GEMINI_API_KEY not configured');
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`;
+  const geminiKey = getGeminiKey();
+  if (!geminiKey) throw new Error('GEMINI_API_KEY not configured');
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(geminiKey)}`;
   const parts = [{ text: promptText }];
   if (imageBase64) {
     parts.push({
@@ -66,7 +74,7 @@ async function callGeminiDirect({ promptText, imageBase64, mimeType }) {
 }
 
 async function callOpenRouter(messages) {
-  const key = process.env.OPEN_ROUTER_APIKEY || process.env.OPENROUTER_API_KEY;
+  const key = getOpenRouterKey();
   if (!key) throw new Error('OpenRouter API key is not configured');
   let lastError;
 
@@ -117,8 +125,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const hasGemini = Boolean(GEMINI_KEY);
-    const hasOpenRouter = Boolean(process.env.OPEN_ROUTER_APIKEY || process.env.OPENROUTER_API_KEY);
+    const hasGemini = Boolean(getGeminiKey());
+    const hasOpenRouter = Boolean(getOpenRouterKey());
 
     if (body.operation === 'health') {
       if (!hasGemini && !hasOpenRouter) {
