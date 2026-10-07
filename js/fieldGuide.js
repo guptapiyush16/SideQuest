@@ -1,4 +1,4 @@
-// SideQuest IRL — Field Guide Database (100 Species across categories)
+// WildDex — Field Guide Database (100 Species across categories)
 // One species = one Pokédex entry.
 
 export const categoryMeta = {

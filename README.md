@@ -1,4 +1,4 @@
-# SideQuest IRL — Production PWA
+# WildDex — Production PWA
 
 > **Core Loop:** Go outside → get a quest → do something → discover something → collect it → earn XP.  
 > *"The AI isn’t trying to keep you on the screen. It gives you a reason to put the phone down."*
@@ -33,7 +33,7 @@ Set these server variables:
 
 ```text
 MONGODB_URI=mongodb+srv://...
-MONGODB_DB=sidequest
+MONGODB_DB=wilddex
 AUTH_SECRET=long-random-secret
 OPEN_ROUTER_APIKEY=...
 OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
@@ -44,7 +44,7 @@ Users create accounts with email and password. Every new account starts with zer
 The demo account created for local testing is:
 
 ```text
-Email: demo@sidequest.app
+Email: demo@wilddex.app
 ```
 
 Use the password generated during setup rather than committing it to the repository. Change or delete this account before production launch.
@@ -61,7 +61,7 @@ Use the password generated during setup rather than committing it to the reposit
 
 ## 🌟 The 5 Core Features (Implemented)
 
-### 1. 🎮 Daily SideQuests (Quest Master)
+### 1. 🎮 Daily Quests (Quest Master)
 - **3 Outdoor Quests Daily:** Curated or AI-generated based on user interests, time budget (15, 30, 60 min), and location.
 - **Quest Kinds:**
   - `📸 Scan`: E.g., *Nature Scout* — Find and photograph a plant you don't recognize (+50 XP).
@@ -105,7 +105,7 @@ Use the password generated during setup rather than committing it to the reposit
 
 ## 🤖 Google Gemma AI Integration
 
-SideQuest IRL is built around **2 focused AI engines** powered by **Google Gemma**:
+WildDex is built around **2 focused AI engines** powered by **Google Gemma**:
 
 | AI Engine | Model | Purpose |
 |---|---|---|
@@ -116,7 +116,7 @@ SideQuest IRL is built around **2 focused AI engines** powered by **Google Gemma
 
 ---
 
-### How to Use Google Gemma in SideQuest
+### How to Use Google Gemma in WildDex
 
 You have **3 flexible options** to run Gemma:
 
@@ -133,7 +133,7 @@ Run Gemma directly on your laptop or phone local network with zero cloud API key
    ollama pull paligemma
    ```
 3. **Start Ollama with Browser CORS Enabled:**  
-   Because SideQuest runs in your browser, Ollama needs to allow browser requests:
+   Because WildDex runs in your browser, Ollama needs to allow browser requests:
    - **Windows (PowerShell):**
      ```powershell
      $env:OLLAMA_ORIGINS="*"
@@ -143,8 +143,8 @@ Run Gemma directly on your laptop or phone local network with zero cloud API key
      ```bash
      OLLAMA_ORIGINS="*" ollama serve
      ```
-4. **Connect in SideQuest:**
-   - Open SideQuest IRL → Tap **🎒 Profile** tab.
+4. **Connect in WildDex:**
+   - Open WildDex → Tap **🎒 Profile** tab.
    - Under **Connect Google Gemma**, select:  
      `Google Gemma via Ollama (Local: localhost:11434)`.
    - Ensure the model is set to `gemma2:2b` (or `gemma2:9b`).
@@ -161,12 +161,12 @@ For production deployment, use the server-side OpenRouter integration:
 3. Set `OPENROUTER_MODEL` to `openrouter/free`.
 4. Redeploy the service and use **Test Connection** in the Profile screen.
 
-The browser calls the SideQuest server, and the server calls OpenRouter. The API key is never exposed to users.
+The browser calls the WildDex server, and the server calls OpenRouter. The API key is never exposed to users.
 
 ---
 
 #### Option C: Built-in Field Guide (Zero Setup / Offline Fallback)
-If neither Ollama nor an API key is available, SideQuest automatically uses its built-in deterministic taxonomy engine with **100 curated flora & fauna species** and a generative quest engine. You can use the app anywhere outdoors even with zero internet.
+If neither Ollama nor an API key is available, WildDex automatically uses its built-in deterministic taxonomy engine with **100 curated flora & fauna species** and a generative quest engine. You can use the app anywhere outdoors even with zero internet.
 
 ---
 

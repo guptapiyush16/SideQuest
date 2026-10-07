@@ -1,4 +1,4 @@
-// 🧠 AI #1 — Quest Master: Generates 3 safe outdoor SideQuests
+// 🧠 AI #1 — Quest Master: Generates 3 safe outdoor quests for WildDex
 // Achievable in 10-60 minutes, tailored to interests, available time and past history.
 
 export const QUEST_POOL = [
@@ -185,7 +185,7 @@ export async function generateDailyQuests({
 }
 
 async function generateQuestsFromOllamaGemma({ interests, minutes, locationName, ollamaUrl, model = 'gemma2:2b' }) {
-  const prompt = `You are the Quest Master for the outdoor exploration game "SideQuest IRL". 
+  const prompt = `You are the Quest Master for the outdoor exploration game "WildDex". 
 Generate exactly 3 safe, fun outdoor quests for an explorer in ${locationName || 'their local city'}.
 Available time: ${minutes} minutes.
 Interests: ${interests.join(', ') || 'general nature, walking'}.

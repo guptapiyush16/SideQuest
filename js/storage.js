@@ -1,4 +1,4 @@
-// SideQuest IRL — Game State & Local-First Storage
+// WildDex — Game State & Local-First Storage
 // Orchestrates XP, Pokédex Deduplication, Quests, Adventures and Cloud Syncing
 
 import { speciesKey, findFieldGuideMatch } from './fieldGuide.js';
@@ -11,7 +11,8 @@ import {
   isCloudSyncActive 
 } from './supabaseClient.js';
 
-const STORAGE_KEY = 'sidequest_irl_state_v1';
+const STORAGE_KEY = 'wilddex_state_v1';
+const LEGACY_STORAGE_KEY = 'sidequest_irl_state_v1';
 
 export const XP_RULES = {
   NEW_SPECIES: 50,
@@ -64,7 +65,7 @@ export class GameStore {
 
   loadInitialState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         return {

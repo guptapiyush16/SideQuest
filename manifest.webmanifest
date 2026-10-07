@@ -1,6 +1,6 @@
 {
-  "name": "SideQuest IRL",
-  "short_name": "SideQuest",
+  "name": "WildDex — Pocket Field Guide",
+  "short_name": "WildDex",
   "description": "Go outside. Get a quest. Discover something. Collect it in your IRL Pokédex. Earn XP.",
   "start_url": "./index.html",
   "display": "standalone",

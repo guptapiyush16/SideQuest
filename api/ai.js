@@ -15,7 +15,7 @@ Do not guess a bird or plant when the image shows a mammal. If the image is a sc
 Output JSON ONLY with this format:
 {"subject_found":true,"candidates":[{"common_name":"Species Name","scientific_name":"Scientific name","category":"animal|plant|flower|bird|insect|mushroom|rock","confidence":91}],"region":"Native region or habitat","fun_fact":"One interesting sentence about this find."}`;
 
-const QUEST_PROMPT = ({ interests, minutes, locationName }) => `You are the Quest Master for the outdoor exploration game "SideQuest IRL".
+const QUEST_PROMPT = ({ interests, minutes, locationName }) => `You are the Quest Master for the outdoor exploration game "WildDex".
 Generate exactly 3 safe, fun outdoor quests for an explorer in ${locationName || 'their local city'}.
 Available time: ${minutes} minutes.
 Interests: ${interests.join(', ') || 'general nature, walking'}.
@@ -84,8 +84,8 @@ async function callOpenRouter(messages) {
       headers: {
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://sidequest-0kzp.onrender.com',
-        'X-OpenRouter-Title': 'SideQuest IRL'
+        'HTTP-Referer': 'https://wilddex.onrender.com',
+        'X-OpenRouter-Title': 'WildDex'
       },
       body: JSON.stringify({
         model: MODEL,

@@ -1,4 +1,4 @@
-// SideQuest IRL — Master Application Controller
+// WildDex — Master Application Controller
 // Field-Journal Editorial Aesthetic (Manus Style)
 
 import { store, XP_RULES } from './storage.js';
@@ -85,7 +85,7 @@ function showAuthScreen() {
   overlay.style.cssText = 'position:fixed;inset:0;z-index:1000;background:#f7f5ef;display:grid;place-items:center;padding:24px;';
   overlay.innerHTML = `
     <form id="auth-form" style="width:min(420px,100%);padding:28px;border:1px solid #d9dfd4;border-radius:16px;background:#fff;">
-      <span class="eyebrow">SIDEQUEST IRL</span>
+      <span class="eyebrow">WILDDEX</span>
       <h1 style="font-family:Fraunces,serif;margin:10px 0;">Your field journal.</h1>
       <p style="color:#748078;font-size:13px;">Sign in to keep your quests, discoveries, and photos private.</p>
       <input id="auth-email" type="email" required autocomplete="email" placeholder="Email" class="supabase-input">

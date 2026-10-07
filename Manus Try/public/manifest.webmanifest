@@ -1,6 +1,6 @@
 {
-  "name": "SideQuest IRL",
-  "short_name": "SideQuest",
+  "name": "WildDex",
+  "short_name": "WildDex",
   "description": "A pocket field guide for making the real world more discoverable.",
   "start_url": "/",
   "scope": "/",

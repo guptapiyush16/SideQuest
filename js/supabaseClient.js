@@ -1,7 +1,8 @@
-// SideQuest API client. The browser never connects directly to MongoDB.
+// WildDex API client. The browser never connects directly to MongoDB.
 
-const TOKEN_KEY = 'sidequest_auth_token';
-let token = localStorage.getItem(TOKEN_KEY);
+const TOKEN_KEY = 'wilddex_auth_token';
+const LEGACY_TOKEN_KEY = 'sidequest_auth_token';
+let token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY);
 let currentUser = null;
 
 async function request(path, options = {}) {

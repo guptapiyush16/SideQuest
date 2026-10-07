@@ -12,3 +12,4 @@ dist/
 .env.*
 atlas-credentials.env
 .DS_Store
+image*.png

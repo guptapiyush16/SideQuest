@@ -1,5 +1,5 @@
-// SideQuest IRL — Service Worker for Offline PWA
-const CACHE_NAME = 'sidequest-v4';
+// WildDex — Service Worker for Offline PWA
+const CACHE_NAME = 'wilddex-v1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -13,7 +13,7 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const jwtSecret = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
 const mongoUri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB || 'sidequest';
+const dbName = process.env.MONGODB_DB || 'wilddex';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 let db;
 let photos;
@@ -176,11 +176,11 @@ async function start() {
   db = client.db(dbName);
   photos = new GridFSBucket(db, { bucketName: 'photos' });
   await db.collection('users').createIndex({ email: 1 }, { unique: true });
-  app.listen(port, '0.0.0.0', () => console.log(`SideQuest server listening on port ${port}`));
+  app.listen(port, '0.0.0.0', () => console.log(`WildDex server listening on port ${port}`));
 }
 
 start().catch(error => {
-  console.error('SideQuest startup failed:', error.message);
+  console.error('WildDex startup failed:', error.message);
   if (error.message.includes('MONGODB_URI')) {
     console.error('Set MONGODB_URI in Render Environment Variables.');
   } else if (error.name === 'MongoServerSelectionError' || error.name === 'MongoNetworkError') {
