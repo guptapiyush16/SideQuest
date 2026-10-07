@@ -77,9 +77,12 @@ export class GameStore {
           history: parsed.history || {},
           interests: parsed.interests || ['🌳 Trees', '🐦 Birds', '🚶 Walking'],
           minutesAvailable: parsed.minutesAvailable || 30,
-          aiSettings: parsed.aiSettings || {
-            enabled: false,
-            ollamaUrl: 'http://localhost:11434'
+          aiSettings: {
+            mode: parsed.aiSettings?.mode || (parsed.aiSettings?.enabled ? 'gemma-local' : 'offline'),
+            enabled: parsed.aiSettings?.enabled || false,
+            ollamaUrl: parsed.aiSettings?.ollamaUrl || 'http://localhost:11434',
+            gemmaModel: parsed.aiSettings?.gemmaModel || 'gemma2:2b',
+            googleApiKey: parsed.aiSettings?.googleApiKey || ''
           },
           onboarded: parsed.onboarded !== undefined ? parsed.onboarded : true,
           dailyBonusClaimed: parsed.dailyBonusClaimed || false,
@@ -101,8 +104,11 @@ export class GameStore {
       interests: ['🌳 Trees', '🐦 Birds', '🚶 Walking'],
       minutesAvailable: 30,
       aiSettings: {
+        mode: 'offline',
         enabled: false,
-        ollamaUrl: 'http://localhost:11434'
+        ollamaUrl: 'http://localhost:11434',
+        gemmaModel: 'gemma2:2b',
+        googleApiKey: ''
       },
       onboarded: false,
       dailyBonusClaimed: false,

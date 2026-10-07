@@ -55,23 +55,74 @@ export class ScannerEngine {
     return canvas.toDataURL('image/jpeg', 0.85);
   }
 
-  async analyzePhoto(dataUrl, { ollamaUrl = '', aiEnabled = false, preferredCategory = null } = {}) {
-    // If local Ollama vision model is enabled, try sending base64 to vision model
-    if (aiEnabled && ollamaUrl) {
+  async analyzePhoto(dataUrl, { aiSettings = {}, preferredCategory = null } = {}) {
+    const mode = aiSettings?.mode || 'offline';
+
+    // 1. Google Gemini / Gemma Vision API
+    if (mode === 'google-api' && aiSettings?.googleApiKey) {
       try {
-        const ollamaResult = await this.callOllamaVision(dataUrl, ollamaUrl);
-        if (ollamaResult) return ollamaResult;
+        const googleResult = await this.callGoogleVision(dataUrl, aiSettings.googleApiKey);
+        if (googleResult) return googleResult;
       } catch (err) {
-        console.warn('Ollama vision failed, falling back to Field Guide classifier:', err.message);
+        console.warn('Google vision API failed, falling back to local Field Guide classifier:', err.message);
       }
     }
 
-    // High quality Field Guide Classifier
-    // Simulates realistic computer vision confidence distribution with taxonomy matching
+    // 2. Local Google PaliGemma / Vision via Ollama
+    if (mode === 'gemma-local' && aiSettings?.ollamaUrl) {
+      try {
+        const ollamaResult = await this.callOllamaVision(dataUrl, aiSettings.ollamaUrl, aiSettings.visionModel || 'paligemma');
+        if (ollamaResult) return ollamaResult;
+      } catch (err) {
+        console.warn('Ollama vision failed, falling back to local Field Guide classifier:', err.message);
+      }
+    }
+
+    // 3. Built-in high quality Field Guide Classifier
     return this.classifyLocalFieldGuide(dataUrl, preferredCategory);
   }
 
-  async callOllamaVision(dataUrl, ollamaUrl) {
+  async callGoogleVision(dataUrl, apiKey) {
+    const base64Data = dataUrl.split(',')[1];
+    const prompt = `Identify the primary natural species or object (plant, flower, bird, insect, mushroom, or rock) in this photo.
+Output JSON ONLY with this format:
+{
+  "subject_found": true,
+  "candidates": [
+    {"common_name": "Species Name", "scientific_name": "Scientific name", "category": "plant|flower|bird|insect|mushroom|rock", "confidence": 91}
+  ],
+  "region": "Native region or habitat",
+  "fun_fact": "One interesting sentence about this find."
+}`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: 'image/jpeg', data: base64Data } }
+          ]
+        }],
+        generationConfig: { responseMimeType: 'application/json' }
+      })
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error('Google Vision HTTP ' + res.status);
+    const data = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parsed = JSON.parse(rawText);
+    return this.formatVisionResult(parsed);
+  }
+
+  async callOllamaVision(dataUrl, ollamaUrl, model = 'paligemma') {
     const base64Data = dataUrl.split(',')[1];
     const prompt = `Identify the primary natural species or object (plant, flower, bird, insect, mushroom, or rock) in this photo.
 Return JSON ONLY:
@@ -92,7 +143,7 @@ Return JSON ONLY:
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
-        model: 'llama3.2-vision',
+        model,
         messages: [{
           role: 'user',
           content: prompt,
@@ -107,7 +158,10 @@ Return JSON ONLY:
     if (!res.ok) throw new Error('Ollama vision returned HTTP ' + res.status);
     const data = await res.json();
     const parsed = JSON.parse(data?.message?.content);
+    return this.formatVisionResult(parsed);
+  }
 
+  formatVisionResult(parsed) {
     if (parsed && Array.isArray(parsed.candidates) && parsed.candidates.length > 0) {
       const top = parsed.candidates[0];
       const match = findFieldGuideMatch(top.common_name, top.scientific_name);
@@ -127,7 +181,7 @@ Return JSON ONLY:
         candidates,
         topCandidate: candidates[0],
         otherPercentage: Math.max(0, 100 - candidates.reduce((s, c) => s + c.confidence, 0)),
-        source: 'ollama_vision'
+        source: 'ai_vision'
       };
     }
     return null;

@@ -466,12 +466,11 @@ button:focus-visible {
   margin-top: 18px;
 }
 
-/* Today Overview Layout (Level Panel + Adventure Memory) */
+/* Today Overview Layout (Level Progression Panel) */
 .today-overview {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(260px, .8fr);
-  gap: 18px;
-  margin-bottom: 48px;
+  grid-template-columns: 1fr;
+  margin-bottom: 40px;
 }
 
 .level-panel {

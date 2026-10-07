@@ -120,7 +120,7 @@
             </button>
           </div>
 
-          <!-- Today Overview: Level Panel + Adventure Memory -->
+          <!-- Today Overview: Level Panel -->
           <div class="today-overview">
             <div class="level-panel">
               <div class="panel-topline">
@@ -141,16 +141,6 @@
                 <span>⚡ <span id="home-xp-to-next">+380 XP to next level</span></span>
                 <span>QUIETLY CURIOUS</span>
               </div>
-            </div>
-
-            <div class="memory-panel">
-              <div class="memory-icon">🧠</div>
-              <div>
-                <span class="eyebrow">ADVENTURE MEMORY</span>
-                <strong>Your kind of detour</strong>
-                <p>You keep noticing leafy things and quiet corners. Today’s quests lean that way.</p>
-              </div>
-              <span class="memory-arrow">↗</span>
             </div>
           </div>
 
@@ -453,7 +443,7 @@
                 </div>
               </div>
               <div class="adventure-note">
-                <span class="eyebrow">A NOTE FROM MEMORY</span>
+                <span class="eyebrow">EXPEDITION INSIGHT</span>
                 <h2>You seem to find more when you slow down.</h2>
                 <p>Your discovery rate is up <strong>28%</strong> on walks under 3 km.</p>
               </div>
@@ -523,28 +513,55 @@
               </div>
             </section>
 
-            <!-- Memory Card Large -->
-            <section class="profile-card memory-card-large">
+            <!-- Google Gemma & AI Engine Configuration Card -->
+            <section class="profile-card gemma-config-card">
               <div class="profile-card-heading">
-                <div class="memory-icon">🧠</div>
+                <div class="memory-icon" style="color: var(--orange); background: var(--orange-soft);">✨</div>
                 <div>
-                  <span class="eyebrow">ADVENTURE MEMORY</span>
-                  <h2>What should the Quest Master know?</h2>
+                  <span class="eyebrow" style="color: var(--orange);">AI ENGINE · GOOGLE GEMMA</span>
+                  <h2>Connect Google Gemma</h2>
                 </div>
               </div>
 
-              <p class="memory-intro">These small signals help future quests feel like they were made for your actual day.</p>
+              <p class="memory-intro">
+                Powers your <strong>Quest Master</strong> and <strong>Field Guide Scanner</strong> with Google's state-of-the-art Gemma 2 and PaliGemma models.
+              </p>
               
-              <div class="interest-list" id="profile-interests-list">
-                <span>Plants &amp; trees <button>×</button></span>
-                <span>Quiet walks <button>×</button></span>
-                <span>Birdwatching <button>×</button></span>
-                <button class="add-interest" id="btn-add-interest">+ Add an interest</button>
+              <div style="display: grid; gap: 12px; margin-top: 14px;">
+                <div>
+                  <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">AI Engine Mode</label>
+                  <select id="ai-engine-select" class="supabase-input" style="margin-top: 4px; margin-bottom: 8px;">
+                    <option value="offline">Built-in Field Guide (Offline / Zero Setup)</option>
+                    <option value="gemma-local">Google Gemma via Ollama (Local: localhost:11434)</option>
+                    <option value="google-api">Google Gemini / Gemma API (Google AI Studio Key)</option>
+                  </select>
+                </div>
+
+                <div id="ai-ollama-group" style="display: none;">
+                  <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Ollama URL</label>
+                  <input type="text" id="ai-ollama-url" class="supabase-input" placeholder="http://localhost:11434" value="http://localhost:11434">
+                  
+                  <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Gemma Model</label>
+                  <input type="text" id="ai-gemma-model" class="supabase-input" placeholder="gemma2:2b" value="gemma2:2b">
+                  <span style="font-size: 10px; color: var(--muted); display: block; margin-top: -6px;">Run <code>ollama run gemma2:2b</code> or <code>ollama run paligemma</code> on your machine.</span>
+                </div>
+
+                <div id="ai-google-api-group" style="display: none;">
+                  <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Google AI Studio API Key</label>
+                  <input type="password" id="ai-google-api-key" class="supabase-input" placeholder="AIzaSy...">
+                  <span style="font-size: 10px; color: var(--muted); display: block; margin-top: -6px;">Get a free API key at <a href="https://aistudio.google.com" target="_blank" style="color: var(--orange); text-decoration: underline;">aistudio.google.com</a>.</span>
+                </div>
+
+                <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center;">
+                  <button class="button button-primary small" id="btn-save-ai-config">Save AI Settings</button>
+                  <button class="button button-outline small" id="btn-test-ai-config">Test Connection</button>
+                </div>
+                <div id="ai-test-status" style="font-size: 11px; margin-top: 4px; display: none; font-weight: 600;"></div>
               </div>
 
-              <div class="memory-footer">
-                <span>✨ Memory is private to this device &amp; cloud account</span>
-                <span class="shield-badge">ANONYMOUS ID</span>
+              <div class="memory-footer" style="margin-top: 22px;">
+                <span>⚡ Powered by Google Gemma 2 &amp; PaliGemma</span>
+                <span class="shield-badge">OPEN WEIGHTS</span>
               </div>
             </section>
           </div>

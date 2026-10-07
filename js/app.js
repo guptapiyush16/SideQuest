@@ -458,8 +458,7 @@ async function analyzeCapturedPhoto(dataUrl) {
   const state = store.getState();
 
   const res = await scanner.analyzePhoto(dataUrl, {
-    aiEnabled: state.aiSettings?.enabled,
-    ollamaUrl: state.aiSettings?.ollamaUrl
+    aiSettings: state.aiSettings
   });
 
   currentScanAnalysis = res;
@@ -929,6 +928,25 @@ function renderProfileScreen() {
   const keyInput = document.getElementById('supabase-key-input');
   if (urlInput && !urlInput.value) urlInput.value = cfg.url || '';
   if (keyInput && !keyInput.value) keyInput.value = cfg.key || '';
+
+  // Google Gemma & AI Engine Configuration
+  const engineSelect = document.getElementById('ai-engine-select');
+  const ollamaGroup = document.getElementById('ai-ollama-group');
+  const googleApiGroup = document.getElementById('ai-google-api-group');
+  const ollamaUrlInput = document.getElementById('ai-ollama-url');
+  const gemmaModelInput = document.getElementById('ai-gemma-model');
+  const googleApiKeyInput = document.getElementById('ai-google-api-key');
+
+  const curMode = state.aiSettings?.mode || 'offline';
+  if (engineSelect && !engineSelect.dataset.userEdited) {
+    engineSelect.value = curMode;
+  }
+  const effectiveMode = engineSelect ? engineSelect.value : curMode;
+  if (ollamaGroup) ollamaGroup.style.display = effectiveMode === 'gemma-local' ? 'block' : 'none';
+  if (googleApiGroup) googleApiGroup.style.display = effectiveMode === 'google-api' ? 'block' : 'none';
+  if (ollamaUrlInput && !ollamaUrlInput.value) ollamaUrlInput.value = state.aiSettings?.ollamaUrl || 'http://localhost:11434';
+  if (gemmaModelInput && !gemmaModelInput.value) gemmaModelInput.value = state.aiSettings?.gemmaModel || 'gemma2:2b';
+  if (googleApiKeyInput && !googleApiKeyInput.value) googleApiKeyInput.value = state.aiSettings?.googleApiKey || '';
 }
 
 // Event Bindings
@@ -1154,6 +1172,110 @@ function bindEventHandlers() {
     });
   }
 
+  // Profile: AI Engine Select change
+  const engineSelect = document.getElementById('ai-engine-select');
+  const ollamaGroup = document.getElementById('ai-ollama-group');
+  const googleApiGroup = document.getElementById('ai-google-api-group');
+  if (engineSelect) {
+    engineSelect.addEventListener('change', () => {
+      engineSelect.dataset.userEdited = 'true';
+      if (ollamaGroup) ollamaGroup.style.display = engineSelect.value === 'gemma-local' ? 'block' : 'none';
+      if (googleApiGroup) googleApiGroup.style.display = engineSelect.value === 'google-api' ? 'block' : 'none';
+    });
+  }
+
+  // Profile: Save AI Settings
+  const saveAiBtn = document.getElementById('btn-save-ai-config');
+  if (saveAiBtn) {
+    saveAiBtn.addEventListener('click', () => {
+      const mode = document.getElementById('ai-engine-select')?.value || 'offline';
+      const ollamaUrl = document.getElementById('ai-ollama-url')?.value.trim() || 'http://localhost:11434';
+      const gemmaModel = document.getElementById('ai-gemma-model')?.value.trim() || 'gemma2:2b';
+      const googleApiKey = document.getElementById('ai-google-api-key')?.value.trim() || '';
+
+      store.updateProfile({
+        aiSettings: {
+          mode,
+          enabled: mode !== 'offline',
+          ollamaUrl,
+          gemmaModel,
+          googleApiKey
+        }
+      });
+
+      const statusEl = document.getElementById('ai-test-status');
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.style.color = 'var(--sage)';
+        const label = mode === 'gemma-local' 
+          ? `Local Gemma (${gemmaModel})` 
+          : mode === 'google-api' 
+            ? 'Google AI Studio API' 
+            : 'Built-in Field Guide (Offline)';
+        statusEl.textContent = `✅ Saved: Active engine is ${label}.`;
+      }
+      showToast('AI engine settings saved');
+    });
+  }
+
+  // Profile: Test AI Connection
+  const testAiBtn = document.getElementById('btn-test-ai-config');
+  if (testAiBtn) {
+    testAiBtn.addEventListener('click', async () => {
+      const mode = document.getElementById('ai-engine-select')?.value || 'offline';
+      const statusEl = document.getElementById('ai-test-status');
+      if (!statusEl) return;
+      statusEl.style.display = 'block';
+
+      if (mode === 'offline') {
+        statusEl.style.color = 'var(--sage)';
+        statusEl.textContent = '✅ Built-in Field Guide offline taxonomy engine is ready (100 curated species).';
+        return;
+      }
+
+      if (mode === 'gemma-local') {
+        const rawUrl = document.getElementById('ai-ollama-url')?.value.trim() || 'http://localhost:11434';
+        const ollamaUrl = rawUrl.replace(/\/$/, '');
+        const model = document.getElementById('ai-gemma-model')?.value.trim() || 'gemma2:2b';
+        statusEl.style.color = 'var(--muted)';
+        statusEl.textContent = `Connecting to Ollama at ${ollamaUrl}…`;
+        try {
+          const res = await fetch(`${ollamaUrl}/api/tags`, { method: 'GET' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const hasModel = data.models?.some(m => m.name.includes(model.split(':')[0]));
+          statusEl.style.color = 'var(--sage)';
+          statusEl.textContent = `✅ Ollama reachable! ${hasModel ? 'Model "' + model + '" found ready.' : 'Note: run "ollama run ' + model + '" in terminal.'}`;
+        } catch (err) {
+          statusEl.style.color = 'var(--orange)';
+          statusEl.textContent = `⚠️ Cannot reach Ollama at ${ollamaUrl}. Ensure "ollama serve" is running (or set OLLAMA_ORIGINS="*" if CORS blocked).`;
+        }
+        return;
+      }
+
+      if (mode === 'google-api') {
+        const apiKey = document.getElementById('ai-google-api-key')?.value.trim();
+        if (!apiKey) {
+          statusEl.style.color = 'var(--orange)';
+          statusEl.textContent = '⚠️ Please enter a Google AI Studio API key first.';
+          return;
+        }
+        statusEl.style.color = 'var(--muted)';
+        statusEl.textContent = 'Validating Google AI Studio API key…';
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          statusEl.style.color = 'var(--sage)';
+          statusEl.textContent = '✅ Connected to Google AI Studio successfully!';
+        } catch (err) {
+          statusEl.style.color = 'var(--orange)';
+          statusEl.textContent = `⚠️ API Key check failed: ${err.message}`;
+        }
+      }
+    });
+  }
+
   // PWA Install Modal
   const installBtn = document.getElementById('btn-install-pwa');
   const installModal = document.getElementById('install-modal-backdrop');
@@ -1180,8 +1302,7 @@ async function refreshQuests() {
     interests: state.interests,
     minutes: state.minutesAvailable,
     locationName: state.currentLocationName,
-    ollamaUrl: state.aiSettings?.ollamaUrl,
-    aiEnabled: state.aiSettings?.enabled
+    aiSettings: state.aiSettings
   });
   store.setTodayQuests(res.quests);
 }

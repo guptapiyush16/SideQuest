@@ -68,6 +68,74 @@ npx serve -l 3000 .
 
 ---
 
+## 🤖 Google Gemma AI Integration
+
+SideQuest IRL is built around **2 focused AI engines** powered by **Google Gemma**:
+
+| AI Engine | Model | Purpose |
+|---|---|---|
+| **1. 🎮 Quest Master** | **Gemma 2** (`gemma2:2b` / `gemma2:9b`) | Generates 3 safe, context-aware outdoor quests tailored to your available time, location, and nature interests. |
+| **2. 📸 Field Guide Scanner** | **PaliGemma** (`paligemma`) | Multimodal vision model that classifies camera photos of plants, birds, insects, and minerals with honest confidence ratings. |
+
+*(Note: AI #3 "Adventure Memory" has been removed to keep the core loop ultra-lean and focused.)*
+
+---
+
+### How to Use Google Gemma in SideQuest
+
+You have **3 flexible options** to run Gemma:
+
+#### Option A: Run 100% Locally & Offline with Ollama (Recommended for Privacy)
+Run Gemma directly on your laptop or phone local network with zero cloud API keys:
+
+1. **Install Ollama** from [ollama.com](https://ollama.com).
+2. **Pull the Gemma models:**
+   ```bash
+   # 1. Text Quest Master (Lightweight Gemma 2 - ~1.6 GB)
+   ollama pull gemma2:2b
+
+   # 2. Vision Field Guide Scanner (Multimodal PaliGemma - ~2.9 GB)
+   ollama pull paligemma
+   ```
+3. **Start Ollama with Browser CORS Enabled:**  
+   Because SideQuest runs in your browser, Ollama needs to allow browser requests:
+   - **Windows (PowerShell):**
+     ```powershell
+     $env:OLLAMA_ORIGINS="*"
+     ollama serve
+     ```
+   - **Mac / Linux:**
+     ```bash
+     OLLAMA_ORIGINS="*" ollama serve
+     ```
+4. **Connect in SideQuest:**
+   - Open SideQuest IRL → Tap **🎒 Profile** tab.
+   - Under **Connect Google Gemma**, select:  
+     `Google Gemma via Ollama (Local: localhost:11434)`.
+   - Ensure the model is set to `gemma2:2b` (or `gemma2:9b`).
+   - Click **"Test Connection"** → You will see `✅ Ollama reachable! Model "gemma2:2b" found ready.`
+   - Click **"Save AI Settings"**.
+
+---
+
+#### Option B: Use Google AI Studio Cloud API (Zero Local RAM)
+If your device has limited RAM or you prefer instant cloud inference:
+
+1. Visit [aistudio.google.com](https://aistudio.google.com) and click **Get API Key** (Free tier available).
+2. Open SideQuest IRL → Tap **🎒 Profile** tab.
+3. Under **Connect Google Gemma**, select:  
+   `Google Gemini / Gemma API (Google AI Studio Key)`.
+4. Paste your key into the **Google AI Studio API Key** field.
+5. Click **"Test Connection"** → You will see `✅ Connected to Google AI Studio successfully!`.
+6. Click **"Save AI Settings"**.
+
+---
+
+#### Option C: Built-in Field Guide (Zero Setup / Offline Fallback)
+If neither Ollama nor an API key is available, SideQuest automatically uses its built-in deterministic taxonomy engine with **100 curated flora & fauna species** and a generative quest engine. You can use the app anywhere outdoors even with zero internet.
+
+---
+
 ## ☁️ Supabase Cloud Storage (Anonymous Device Identity)
 
 ### Anonymous Device Identity (No Login Required)

@@ -115,20 +115,50 @@ export const QUEST_POOL = [
   }
 ];
 
-export async function generateDailyQuests({ interests = [], minutes = 30, locationName = '', ollamaUrl = '', aiEnabled = false }) {
-  // If local Ollama AI is enabled and reachable, attempt LLM generation
-  if (aiEnabled && ollamaUrl) {
+export async function generateDailyQuests({ 
+  interests = [], 
+  minutes = 30, 
+  locationName = '', 
+  aiSettings = { mode: 'offline', ollamaUrl: 'http://localhost:11434', gemmaModel: 'gemma2:2b', googleApiKey: '' } 
+} = {}) {
+  const mode = aiSettings?.mode || 'offline';
+
+  // 1. Google Gemini / Gemma Cloud API
+  if (mode === 'google-api' && aiSettings?.googleApiKey) {
     try {
-      const quests = await generateQuestsFromOllama({ interests, minutes, locationName, ollamaUrl });
+      const quests = await generateQuestsFromGoogleApi({
+        interests,
+        minutes,
+        locationName,
+        apiKey: aiSettings.googleApiKey
+      });
       if (quests && quests.length === 3) {
-        return { quests, source: 'ai' };
+        return { quests, source: 'google-api' };
       }
     } catch (e) {
-      console.warn('Ollama quest generation fallback to local generator:', e.message);
+      console.warn('Google API quest generation failed, falling back to curated:', e.message);
     }
   }
 
-  // Generative selection ensuring high quality variety (1 scan, 1 walk, 1 observe)
+  // 2. Local Google Gemma via Ollama
+  if (mode === 'gemma-local' && aiSettings?.ollamaUrl) {
+    try {
+      const quests = await generateQuestsFromOllamaGemma({ 
+        interests, 
+        minutes, 
+        locationName, 
+        ollamaUrl: aiSettings.ollamaUrl,
+        model: aiSettings.gemmaModel || 'gemma2:2b'
+      });
+      if (quests && quests.length === 3) {
+        return { quests, source: 'gemma-local' };
+      }
+    } catch (e) {
+      console.warn('Ollama Gemma quest generation failed, falling back to curated:', e.message);
+    }
+  }
+
+  // 3. Generative curated selection (High-quality offline fallback)
   const allowed = QUEST_POOL.filter(q => q.minutes <= Math.max(minutes, 15) + 10);
   const byKind = {
     scan: allowed.filter(q => q.kind === 'scan'),
@@ -155,13 +185,13 @@ export async function generateDailyQuests({ interests = [], minutes = 30, locati
   return { quests: questsWithIds, source: 'curated' };
 }
 
-async function generateQuestsFromOllama({ interests, minutes, locationName, ollamaUrl }) {
-  const prompt = `You are the Quest Master for "SideQuest IRL". 
+async function generateQuestsFromOllamaGemma({ interests, minutes, locationName, ollamaUrl, model = 'gemma2:2b' }) {
+  const prompt = `You are the Quest Master for the outdoor exploration game "SideQuest IRL". 
 Generate exactly 3 safe, fun outdoor quests for an explorer in ${locationName || 'their local city'}.
 Available time: ${minutes} minutes.
 Interests: ${interests.join(', ') || 'general nature, walking'}.
-Rule: 1 scan quest (find a plant/bird/bug), 1 walk quest (targetKm 0.5 to 2.5), 1 observe quest (mindful observation).
-Output ONLY valid JSON with format:
+Rule: Exactly 1 scan quest (find a plant/bird/bug), 1 walk quest (targetKm 0.5 to 2.5), 1 observe quest (mindful observation).
+Output valid JSON ONLY with this exact format:
 {"quests":[{"emoji":"🌳","title":"Title (max 3 words)","description":"Actionable text","kind":"scan|walk|observe","targetKm":1.0,"minutes":20,"xp":50}]}
 Keep XP between 30 and 80.`;
 
@@ -173,7 +203,7 @@ Keep XP between 30 and 80.`;
     headers: { 'Content-Type': 'application/json' },
     signal: controller.signal,
     body: JSON.stringify({
-      model: 'llama3.2',
+      model,
       messages: [{ role: 'user', content: prompt }],
       stream: false,
       format: 'json'
@@ -184,6 +214,42 @@ Keep XP between 30 and 80.`;
   if (!res.ok) throw new Error('Ollama HTTP ' + res.status);
   const data = await res.json();
   const parsed = JSON.parse(data?.message?.content);
+  return formatParsedQuests(parsed);
+}
+
+async function generateQuestsFromGoogleApi({ interests, minutes, locationName, apiKey }) {
+  const prompt = `You are the Quest Master for the outdoor exploration game "SideQuest IRL". 
+Generate exactly 3 safe, fun outdoor quests for an explorer in ${locationName || 'their local city'}.
+Available time: ${minutes} minutes.
+Interests: ${interests.join(', ') || 'general nature, walking'}.
+Rule: Exactly 1 scan quest (find a plant/bird/bug), 1 walk quest (targetKm 0.5 to 2.5), 1 observe quest (mindful observation).
+Output valid JSON ONLY with this exact format:
+{"quests":[{"emoji":"🌳","title":"Title (max 3 words)","description":"Actionable text","kind":"scan|walk|observe","targetKm":1.0,"minutes":20,"xp":50}]}
+Keep XP between 30 and 80.`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal: controller.signal,
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' }
+    })
+  });
+  clearTimeout(timer);
+
+  if (!res.ok) throw new Error('Google API HTTP ' + res.status);
+  const data = await res.json();
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const parsed = JSON.parse(rawText);
+  return formatParsedQuests(parsed);
+}
+
+function formatParsedQuests(parsed) {
   if (Array.isArray(parsed?.quests) && parsed.quests.length >= 3) {
     const dateKey = new Date().toISOString().split('T')[0];
     return parsed.quests.slice(0, 3).map((q, idx) => ({
@@ -199,5 +265,5 @@ Keep XP between 30 and 80.`;
       dateKey
     }));
   }
-  throw new Error('Invalid format from LLM');
+  throw new Error('Invalid format from AI response');
 }
