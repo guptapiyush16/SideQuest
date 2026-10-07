@@ -1,4 +1,4 @@
-const MODEL = (process.env.OPENROUTER_MODEL || 'openrouter/free').replace(/\\/g, '/');
+const MODEL = (process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash').replace(/\\/g, '/');
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const VISION_PROMPT = `Identify the primary visible subject in this photo. It may be an animal (including dog or cat), plant, flower, bird, insect, mushroom, or rock.
@@ -36,6 +36,7 @@ async function callOpenRouter(messages) {
       body: JSON.stringify({
         model: MODEL,
         messages,
+        max_tokens: 600,
         temperature: 0.1
       })
     });
