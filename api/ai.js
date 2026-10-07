@@ -1,4 +1,4 @@
-const MODEL = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-2.0-flash';
+const MODEL = process.env.GOOGLE_GENERATIVE_AI_MODEL || 'gemini-3.8-flash';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 const VISION_PROMPT = `Identify the primary natural species or object (plant, flower, bird, insect, mushroom, or rock) in this photo.

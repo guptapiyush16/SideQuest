@@ -15,4 +15,4 @@ services:
       - key: GOOGLE_GENERATIVE_AI_KEY
         sync: false
       - key: GOOGLE_GENERATIVE_AI_MODEL
-        value: gemini-2.0-flash
+        value: gemini-3.8-flash
