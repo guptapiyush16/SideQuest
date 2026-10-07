@@ -167,11 +167,22 @@ function publicUser(user) {
 
 async function start() {
   if (!mongoUri) throw new Error('MONGODB_URI is not configured');
-  const client = await MongoClient.connect(mongoUri);
+  const client = await MongoClient.connect(mongoUri, {
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000
+  });
   db = client.db(dbName);
   photos = new GridFSBucket(db, { bucketName: 'photos' });
   await db.collection('users').createIndex({ email: 1 }, { unique: true });
-  app.listen(port, () => console.log(`SideQuest server listening on port ${port}`));
+  app.listen(port, '0.0.0.0', () => console.log(`SideQuest server listening on port ${port}`));
 }
 
-start().catch(error => { console.error(error); process.exit(1); });
+start().catch(error => {
+  console.error('SideQuest startup failed:', error.message);
+  if (error.message.includes('MONGODB_URI')) {
+    console.error('Set MONGODB_URI in Render Environment Variables.');
+  } else if (error.name === 'MongoServerSelectionError' || error.name === 'MongoNetworkError') {
+    console.error('Allow Render to connect in MongoDB Atlas Network Access and verify the Atlas database user.');
+  }
+  process.exit(1);
+});
