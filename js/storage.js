@@ -81,8 +81,7 @@ export class GameStore {
             mode: parsed.aiSettings?.mode || (parsed.aiSettings?.enabled ? 'gemma-local' : 'offline'),
             enabled: parsed.aiSettings?.enabled || false,
             ollamaUrl: parsed.aiSettings?.ollamaUrl || 'http://localhost:11434',
-            gemmaModel: parsed.aiSettings?.gemmaModel || 'gemma2:2b',
-            googleApiKey: parsed.aiSettings?.googleApiKey || ''
+            gemmaModel: parsed.aiSettings?.gemmaModel || 'gemma2:2b'
           },
           onboarded: parsed.onboarded !== undefined ? parsed.onboarded : true,
           dailyBonusClaimed: parsed.dailyBonusClaimed || false,
@@ -107,8 +106,7 @@ export class GameStore {
         mode: 'offline',
         enabled: false,
         ollamaUrl: 'http://localhost:11434',
-        gemmaModel: 'gemma2:2b',
-        googleApiKey: ''
+        gemmaModel: 'gemma2:2b'
       },
       onboarded: false,
       dailyBonusClaimed: false,

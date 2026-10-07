@@ -59,9 +59,9 @@ export class ScannerEngine {
     const mode = aiSettings?.mode || 'offline';
 
     // 1. Google Gemini / Gemma Vision API
-    if (mode === 'google-api' && aiSettings?.googleApiKey) {
+    if (mode === 'google-api') {
       try {
-        const googleResult = await this.callGoogleVision(dataUrl, aiSettings.googleApiKey);
+        const googleResult = await this.callGoogleVision(dataUrl);
         if (googleResult) return googleResult;
       } catch (err) {
         console.warn('Google vision API failed, falling back to local Field Guide classifier:', err.message);
@@ -82,40 +82,24 @@ export class ScannerEngine {
     return this.classifyLocalFieldGuide(dataUrl, preferredCategory);
   }
 
-  async callGoogleVision(dataUrl, apiKey) {
+  async callGoogleVision(dataUrl) {
     const base64Data = dataUrl.split(',')[1];
-    const prompt = `Identify the primary natural species or object (plant, flower, bird, insect, mushroom, or rock) in this photo.
-Output JSON ONLY with this format:
-{
-  "subject_found": true,
-  "candidates": [
-    {"common_name": "Species Name", "scientific_name": "Scientific name", "category": "plant|flower|bird|insect|mushroom|rock", "confidence": 91}
-  ],
-  "region": "Native region or habitat",
-  "fun_fact": "One interesting sentence about this find."
-}`;
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
 
-    const res = await fetch(url, {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: 'image/jpeg', data: base64Data } }
-          ]
-        }],
-        generationConfig: { responseMimeType: 'application/json' }
+        operation: 'vision',
+        imageBase64: base64Data,
+        mimeType: dataUrl.match(/^data:([^;]+);/)?.[1] || 'image/jpeg'
       })
     });
     clearTimeout(timeout);
 
-    if (!res.ok) throw new Error('Google Vision HTTP ' + res.status);
+    if (!res.ok) throw new Error('Managed vision API HTTP ' + res.status);
     const data = await res.json();
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     const parsed = JSON.parse(rawText);

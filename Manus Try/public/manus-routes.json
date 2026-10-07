@@ -1,9 +1,0 @@
-{
-  "routes": [
-    { "path": "/", "title": "Today — SideQuest IRL" },
-    { "path": "/scan", "title": "Scan — SideQuest IRL" },
-    { "path": "/pokedex", "title": "Pokédex — SideQuest IRL" },
-    { "path": "/adventures", "title": "Adventures — SideQuest IRL" },
-    { "path": "/profile", "title": "Profile — SideQuest IRL" }
-  ]
-}

@@ -533,7 +533,7 @@
                   <select id="ai-engine-select" class="supabase-input" style="margin-top: 4px; margin-bottom: 8px;">
                     <option value="offline">Built-in Field Guide (Offline / Zero Setup)</option>
                     <option value="gemma-local">Google Gemma via Ollama (Local: localhost:11434)</option>
-                    <option value="google-api">Google Gemini / Gemma API (Google AI Studio Key)</option>
+                    <option value="google-api">Managed Google AI (server-side credentials)</option>
                   </select>
                 </div>
 
@@ -547,9 +547,7 @@
                 </div>
 
                 <div id="ai-google-api-group" style="display: none;">
-                  <label style="font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;">Google AI Studio API Key</label>
-                  <input type="password" id="ai-google-api-key" class="supabase-input" placeholder="AIzaSy...">
-                  <span style="font-size: 10px; color: var(--muted); display: block; margin-top: -6px;">Get a free API key at <a href="https://aistudio.google.com" target="_blank" style="color: var(--orange); text-decoration: underline;">aistudio.google.com</a>.</span>
+                  <span style="font-size: 10px; color: var(--muted); display: block; margin-top: 4px;">The production API credential is kept on the server. Configure <code>GOOGLE_GENERATIVE_AI_KEY</code> in your deployment environment.</span>
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center;">

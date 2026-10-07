@@ -119,18 +119,17 @@ export async function generateDailyQuests({
   interests = [], 
   minutes = 30, 
   locationName = '', 
-  aiSettings = { mode: 'offline', ollamaUrl: 'http://localhost:11434', gemmaModel: 'gemma2:2b', googleApiKey: '' } 
+  aiSettings = { mode: 'offline', ollamaUrl: 'http://localhost:11434', gemmaModel: 'gemma2:2b' }
 } = {}) {
   const mode = aiSettings?.mode || 'offline';
 
   // 1. Google Gemini / Gemma Cloud API
-  if (mode === 'google-api' && aiSettings?.googleApiKey) {
+  if (mode === 'google-api') {
     try {
       const quests = await generateQuestsFromGoogleApi({
         interests,
         minutes,
-        locationName,
-        apiKey: aiSettings.googleApiKey
+        locationName
       });
       if (quests && quests.length === 3) {
         return { quests, source: 'google-api' };
@@ -217,32 +216,19 @@ Keep XP between 30 and 80.`;
   return formatParsedQuests(parsed);
 }
 
-async function generateQuestsFromGoogleApi({ interests, minutes, locationName, apiKey }) {
-  const prompt = `You are the Quest Master for the outdoor exploration game "SideQuest IRL". 
-Generate exactly 3 safe, fun outdoor quests for an explorer in ${locationName || 'their local city'}.
-Available time: ${minutes} minutes.
-Interests: ${interests.join(', ') || 'general nature, walking'}.
-Rule: Exactly 1 scan quest (find a plant/bird/bug), 1 walk quest (targetKm 0.5 to 2.5), 1 observe quest (mindful observation).
-Output valid JSON ONLY with this exact format:
-{"quests":[{"emoji":"🌳","title":"Title (max 3 words)","description":"Actionable text","kind":"scan|walk|observe","targetKm":1.0,"minutes":20,"xp":50}]}
-Keep XP between 30 and 80.`;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+async function generateQuestsFromGoogleApi({ interests, minutes, locationName }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);
 
-  const res = await fetch(url, {
+  const res = await fetch('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     signal: controller.signal,
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json' }
-    })
+    body: JSON.stringify({ operation: 'quests', interests, minutes, locationName })
   });
   clearTimeout(timer);
 
-  if (!res.ok) throw new Error('Google API HTTP ' + res.status);
+  if (!res.ok) throw new Error('Managed quest API HTTP ' + res.status);
   const data = await res.json();
   const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   const parsed = JSON.parse(rawText);

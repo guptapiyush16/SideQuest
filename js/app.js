@@ -935,7 +935,6 @@ function renderProfileScreen() {
   const googleApiGroup = document.getElementById('ai-google-api-group');
   const ollamaUrlInput = document.getElementById('ai-ollama-url');
   const gemmaModelInput = document.getElementById('ai-gemma-model');
-  const googleApiKeyInput = document.getElementById('ai-google-api-key');
 
   const curMode = state.aiSettings?.mode || 'offline';
   if (engineSelect && !engineSelect.dataset.userEdited) {
@@ -946,7 +945,6 @@ function renderProfileScreen() {
   if (googleApiGroup) googleApiGroup.style.display = effectiveMode === 'google-api' ? 'block' : 'none';
   if (ollamaUrlInput && !ollamaUrlInput.value) ollamaUrlInput.value = state.aiSettings?.ollamaUrl || 'http://localhost:11434';
   if (gemmaModelInput && !gemmaModelInput.value) gemmaModelInput.value = state.aiSettings?.gemmaModel || 'gemma2:2b';
-  if (googleApiKeyInput && !googleApiKeyInput.value) googleApiKeyInput.value = state.aiSettings?.googleApiKey || '';
 }
 
 // Event Bindings
@@ -1191,15 +1189,12 @@ function bindEventHandlers() {
       const mode = document.getElementById('ai-engine-select')?.value || 'offline';
       const ollamaUrl = document.getElementById('ai-ollama-url')?.value.trim() || 'http://localhost:11434';
       const gemmaModel = document.getElementById('ai-gemma-model')?.value.trim() || 'gemma2:2b';
-      const googleApiKey = document.getElementById('ai-google-api-key')?.value.trim() || '';
-
       store.updateProfile({
         aiSettings: {
           mode,
           enabled: mode !== 'offline',
           ollamaUrl,
-          gemmaModel,
-          googleApiKey
+          gemmaModel
         }
       });
 
@@ -1254,20 +1249,17 @@ function bindEventHandlers() {
       }
 
       if (mode === 'google-api') {
-        const apiKey = document.getElementById('ai-google-api-key')?.value.trim();
-        if (!apiKey) {
-          statusEl.style.color = 'var(--orange)';
-          statusEl.textContent = '⚠️ Please enter a Google AI Studio API key first.';
-          return;
-        }
         statusEl.style.color = 'var(--muted)';
-        statusEl.textContent = 'Validating Google AI Studio API key…';
+        statusEl.textContent = 'Checking the managed AI service…';
         try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-          const res = await fetch(url);
+          const res = await fetch('/api/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operation: 'health' })
+          });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           statusEl.style.color = 'var(--sage)';
-          statusEl.textContent = '✅ Connected to Google AI Studio successfully!';
+          statusEl.textContent = '✅ Managed Google AI service is ready.';
         } catch (err) {
           statusEl.style.color = 'var(--orange)';
           statusEl.textContent = `⚠️ API Key check failed: ${err.message}`;

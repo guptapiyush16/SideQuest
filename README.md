@@ -1,9 +1,11 @@
-# SideQuest IRL — Mobile-First PWA (MVP)
+# SideQuest IRL — Production PWA
 
 > **Core Loop:** Go outside → get a quest → do something → discover something → collect it → earn XP.  
 > *"The AI isn’t trying to keep you on the screen. It gives you a reason to put the phone down."*
 
 ---
+
+The repository contains one canonical app: the browser PWA in `index.html`, `styles.css`, `js/`, `assets/`, and `api/`.
 
 ## 📱 How to Run & Install as a Mobile PWA
 
@@ -13,6 +15,14 @@ To restart the server at any time:
 ```bash
 npx serve -l 3000 .
 ```
+
+The offline and curated modes work on a static host. The managed Google AI mode requires a host that supports the included serverless function, such as Vercel.
+
+### Managed AI deployment
+
+Configure `GOOGLE_GENERATIVE_AI_KEY` as a server-side environment variable. Do not add it to the repository, HTML, JavaScript, local storage, or a client-side build. Optionally set `GOOGLE_GENERATIVE_AI_MODEL`.
+
+The PWA calls `/api/ai` for quest generation, image identification, and health checks. The function forwards requests to Google AI Studio without exposing the credential to the browser. Use the offline or local Ollama mode when deploying to a static-only host.
 
 ### 2. Install on Your Phone (PWA)
 1. Ensure your phone is connected to the same Wi-Fi network as your computer.
