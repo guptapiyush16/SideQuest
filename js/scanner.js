@@ -56,7 +56,7 @@ export class ScannerEngine {
   }
 
   async analyzePhoto(dataUrl, { aiSettings = {}, preferredCategory = null } = {}) {
-    const mode = aiSettings?.mode || 'offline';
+    const mode = 'google-api';
     let visionError = null;
 
     // 1. Google Gemini / Gemma Vision API
@@ -70,20 +70,16 @@ export class ScannerEngine {
       }
     }
 
-    // 2. Local Google PaliGemma / Vision via Ollama
-    if (mode === 'gemma-local' && aiSettings?.ollamaUrl) {
-      try {
-        const ollamaResult = await this.callOllamaVision(dataUrl, aiSettings.ollamaUrl, aiSettings.visionModel || 'paligemma');
-        if (ollamaResult) return ollamaResult;
-      } catch (err) {
-        console.warn('Ollama vision failed, falling back to local Field Guide classifier:', err.message);
-      }
-    }
-
-    // 3. Built-in high quality Field Guide Classifier
-    const fallback = this.classifyLocalFieldGuide(dataUrl, preferredCategory);
-    if (visionError) fallback.message = 'Managed Google AI is temporarily unavailable. Please try scanning again in a moment.';
-    return fallback;
+    return {
+      status: 'unsupported',
+      candidates: [],
+      topCandidate: null,
+      otherPercentage: 100,
+      source: 'google-api',
+      message: visionError?.message?.includes('503')
+        ? 'Managed Google AI is temporarily busy. Please try again in a moment.'
+        : 'Managed Google AI could not analyze this image. Please try another photo.'
+    };
   }
 
   async callGoogleVision(dataUrl) {
