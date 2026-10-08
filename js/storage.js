@@ -72,6 +72,7 @@ export class GameStore {
     this.state.activeQuestId = null;
     this.state.activeQuestData = null;
     this.state.dailyBonusClaimed = false;
+    this.state.walkBonusClaimed = false;
     this.save();
   }
 
@@ -97,6 +98,7 @@ export class GameStore {
           },
           onboarded: parsed.onboarded !== undefined ? parsed.onboarded : true,
           dailyBonusClaimed: parsed.dailyBonusClaimed || false,
+          walkBonusClaimed: parsed.walkBonusClaimed || false,
           currentLocationName: parsed.currentLocationName || 'Gurugram'
         };
       }
@@ -121,6 +123,7 @@ export class GameStore {
       },
       onboarded: false,
       dailyBonusClaimed: false,
+      walkBonusClaimed: false,
       currentLocationName: 'Local Trail'
     };
   }
@@ -145,6 +148,7 @@ export class GameStore {
     this.state.activeQuestData = null;
     this.state.history = {};
     this.state.dailyBonusClaimed = false;
+    this.state.walkBonusClaimed = false;
     this.save();
   }
 
@@ -333,7 +337,8 @@ export class GameStore {
     // Check if integer km threshold crossed
     const prevKm = (day.distanceKm || 0) - km;
     const crossed = Math.floor(day.distanceKm) - Math.floor(prevKm);
-    if (crossed > 0) {
+    if (crossed > 0 && !this.state.walkBonusClaimed) {
+      this.state.walkBonusClaimed = true;
       distanceXpEvent = this.awardXp(XP_RULES.WALK_PER_KM * crossed, `Walked ${Math.floor(day.distanceKm)} km today`, '🚶');
     }
 
@@ -379,11 +384,12 @@ export class GameStore {
     return d;
   }
 
-  updateProfile({ name, interests, minutesAvailable, aiSettings }) {
+  updateProfile({ name, interests, minutesAvailable, aiSettings, currentLocationName }) {
     if (name !== undefined) this.state.name = name;
     if (interests !== undefined) this.state.interests = interests;
     if (minutesAvailable !== undefined) this.state.minutesAvailable = minutesAvailable;
     if (aiSettings !== undefined) this.state.aiSettings = { ...this.state.aiSettings, ...aiSettings };
+    if (currentLocationName !== undefined) this.state.currentLocationName = currentLocationName;
     this.save();
     syncProfile({
       name: this.state.name,

@@ -235,8 +235,12 @@ async function generateQuestsFromGoogleApi({ interests, minutes, locationName })
 
   if (!res.ok) throw new Error('Managed quest API HTTP ' + res.status);
   const data = await res.json();
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  const parsed = JSON.parse(rawText);
+  const rawText = data?.choices?.[0]?.message?.content;
+  if (!rawText) throw new Error('Managed quest API returned no content');
+  const normalized = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  const start = normalized.indexOf('{');
+  const end = normalized.lastIndexOf('}');
+  const parsed = JSON.parse(start >= 0 && end > start ? normalized.slice(start, end + 1) : normalized);
   return formatParsedQuests(parsed);
 }
 

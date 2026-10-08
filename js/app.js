@@ -22,7 +22,13 @@ let currentCapturedPhoto = null;
 let currentScanAnalysis = null;
 let questTimerInterval = null;
 let userCoords = null;
+let deferredInstallPrompt = null;
 let toastTimeout = null;
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+});
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -302,6 +308,36 @@ function renderHeader() {
 function renderHomeScreen() {
   const state = store.getState();
   const lvl = store.getLevelInfo();
+  const today = new Date();
+  const todayLabel = today.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric'
+  }).toUpperCase();
+  const dateEyebrow = document.getElementById('today-date-eyebrow');
+  if (dateEyebrow) dateEyebrow.textContent = todayLabel;
+  document.querySelectorAll('[data-time]').forEach(button => {
+    const selected = Number(button.dataset.time) === Number(state.minutesAvailable || 30);
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  const dailyChallengeBtn = document.getElementById('btn-action-daily-challenge');
+  const dailyChallengeStatus = document.getElementById('status-daily-challenge');
+  if (dailyChallengeBtn && dailyChallengeStatus) {
+    const claimed = Boolean(state.dailyBonusClaimed);
+    dailyChallengeStatus.textContent = claimed ? 'Logged ✓' : '+50 XP';
+    dailyChallengeBtn.classList.toggle('is-done', claimed);
+    dailyChallengeBtn.disabled = claimed;
+  }
+  const walkBonusBtn = document.getElementById('btn-action-walk-km');
+  const walkBonusStatus = document.getElementById('status-walk-km');
+  if (walkBonusBtn && walkBonusStatus) {
+    const claimed = Boolean(state.walkBonusClaimed);
+    walkBonusStatus.textContent = claimed ? 'Logged ✓' : '+20 XP';
+    walkBonusBtn.classList.toggle('is-done', claimed);
+    walkBonusBtn.disabled = claimed;
+  }
   
   // Level Panel
   document.getElementById('home-level-num').textContent = String(lvl.level).padStart(2, '0');
@@ -1055,9 +1091,55 @@ function bindEventHandlers() {
   const avatarBtn = document.getElementById('btn-topbar-profile');
   if (avatarBtn) avatarBtn.addEventListener('click', () => navigateTo('profile'));
 
+  const locationBtn = document.getElementById('btn-topbar-location');
+  if (locationBtn) {
+    locationBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        showToast('Location is not supported by this browser');
+        return;
+      }
+      locationBtn.disabled = true;
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          userCoords = { lat: coords.latitude, lng: coords.longitude };
+          store.updateProfile({ currentLocationName: 'Current location' });
+          locationBtn.title = 'Current location';
+          locationBtn.disabled = false;
+          showToast('Current location updated');
+        },
+        () => {
+          locationBtn.disabled = false;
+          showToast('Location permission was not granted');
+        },
+        { enableHighAccuracy: false, timeout: 8000 }
+      );
+    });
+  }
+
   // Home Intro Scan Button
   const homeScan = document.getElementById('btn-home-scan-find');
   if (homeScan) homeScan.addEventListener('click', () => navigateTo('scan'));
+
+  document.querySelectorAll('[data-time]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const minutes = Number(btn.dataset.time);
+      document.querySelectorAll('[data-time]').forEach(item => {
+        const selected = item === btn;
+        item.classList.toggle('active', selected);
+        item.setAttribute('aria-pressed', String(selected));
+      });
+      store.updateProfile({ minutesAvailable: minutes });
+      try {
+        btn.disabled = true;
+        await refreshQuests();
+        showToast(`${minutes}-minute quests loaded`);
+      } catch (error) {
+        showToast(`Could not load quests: ${error.message}`);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
 
   // Active Quest: Back Button
   const questBack = document.getElementById('btn-quest-back');
@@ -1121,11 +1203,17 @@ function bindEventHandlers() {
   const walkKmBtn = document.getElementById('btn-action-walk-km');
   if (walkKmBtn) {
     walkKmBtn.addEventListener('click', () => {
+      if (store.getState().walkBonusClaimed) return;
       const res = store.awardXp(20, '1 km walk logged', '👣');
-      showToast('1 km walk logged · +20 XP');
-      document.getElementById('status-walk-km').textContent = 'Logged ✓';
-      walkKmBtn.classList.add('is-done');
-      if (res.leveledUp) triggerConfetti();
+      store.state.walkBonusClaimed = true;
+      store.save();
+      if (res) {
+        showToast('1 km walk logged · +20 XP');
+        document.getElementById('status-walk-km').textContent = 'Logged ✓';
+        walkKmBtn.classList.add('is-done');
+        walkKmBtn.disabled = true;
+        if (res.leveledUp) triggerConfetti();
+      }
     });
   }
 
@@ -1298,6 +1386,16 @@ function bindEventHandlers() {
     });
   }
 
+  document.querySelectorAll('#btn-setting-outdoor, #btn-setting-confidence').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const enabled = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', String(enabled));
+      btn.textContent = enabled ? 'ON' : 'OFF';
+      btn.closest('.setting-line')?.querySelector('.setting-dot')?.classList.toggle('on', enabled);
+      showToast(`${btn.id === 'btn-setting-outdoor' ? 'Outdoor-only quests' : 'Confidence notes'} ${enabled ? 'enabled' : 'disabled'}`);
+    });
+  });
+
   // PWA Install Modal
   const installBtn = document.getElementById('btn-install-pwa');
   const installModal = document.getElementById('install-modal-backdrop');
@@ -1306,7 +1404,17 @@ function bindEventHandlers() {
   if (installBtn && installModal) {
     installBtn.addEventListener('click', () => installModal.style.display = 'grid');
     closeInstall.addEventListener('click', () => installModal.style.display = 'none');
-    confirmInstall.addEventListener('click', () => installModal.style.display = 'none');
+    confirmInstall.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) {
+        installModal.style.display = 'none';
+        showToast('Install is not available in this browser yet');
+        return;
+      }
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      installModal.style.display = 'none';
+    });
   }
 
   // Toast Dismiss

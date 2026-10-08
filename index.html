@@ -181,9 +181,9 @@
             <!-- Time Filter Selector -->
             <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: center;">
               <span style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em;">Time available:</span>
-              <button class="cat-chip" data-time="15">15 min</button>
-              <button class="cat-chip active" data-time="30">30 min</button>
-              <button class="cat-chip" data-time="60">60 min</button>
+              <button class="cat-chip" data-time="15" aria-pressed="false">15 min</button>
+              <button class="cat-chip active" data-time="30" aria-pressed="true">30 min</button>
+              <button class="cat-chip" data-time="60" aria-pressed="false">60 min</button>
             </div>
 
             <!-- Quest List Container -->
@@ -608,11 +608,11 @@
             </div>
             <div class="setting-line">
               <span><span class="setting-dot on"></span> Outdoor-only quests</span>
-              <button>ON</button>
+              <button id="btn-setting-outdoor" aria-pressed="true">ON</button>
             </div>
             <div class="setting-line">
               <span><span class="setting-dot on"></span> Confidence notes</span>
-              <button>ON</button>
+              <button id="btn-setting-confidence" aria-pressed="true">ON</button>
             </div>
             <div class="setting-line">
               <span><span class="setting-dot"></span> Reset progress</span>
