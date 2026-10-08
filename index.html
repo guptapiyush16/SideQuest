@@ -21,8 +21,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
 
-  <!-- Supabase JS Client for Cloud Persistence -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Canvas Confetti for Level Ups & Discoveries -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
@@ -35,13 +33,7 @@
   <script defer src="/_vercel/speed-insights/script.js"></script>
 
   <link rel="stylesheet" href="./styles.css?v=2">
-  <style>
-    .supabase-box > div:first-of-type,
-    #btn-copy-sql-schema,
-    #supabase-connect-msg {
-      display: none !important;
-    }
-  </style>
+
   <style>
     body:not(.app-ready) {
       visibility: hidden;
@@ -572,28 +564,16 @@
 
           <!-- Account Section -->
           <div class="supabase-box">
-            <span class="eyebrow" style="color: var(--orange);">PRIVATE ACCOUNT</span>
+            <span class="eyebrow" style="color: var(--orange);">ACCOUNT & DATA</span>
             <h2 style="font-family: 'Fraunces', serif; font-size: 22px; margin: 8px 0;">Account settings</h2>
             <p style="color: var(--muted); font-size: 12px; line-height: 1.6; margin-bottom: 14px;">
-              Your progress and captured photos are private to your email account. Photos are stored in MongoDB GridFS.
+              Your progress, Pokédex discoveries, and captured photos are stored securely in MongoDB Atlas and GridFS.
             </p>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-              <div>
-                <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Supabase Project URL</label>
-              </div>
-              <div>
-                <label style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Supabase Anon Public API Key</label>
-                <input type="password" id="supabase-key-input" class="supabase-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6...">
-              </div>
-            </div>
             <div style="display: flex; gap: 10px; margin-top: 4px;">
               <button class="button button-outline small" id="btn-logout" type="button">
                 Sign out
               </button>
             </div>
-            
-            <div id="supabase-connect-msg" style="font-size: 11px; margin-top: 10px; display: none;"></div>
           </div>
 
           <section class="settings-strip" style="margin-top: 32px;">
