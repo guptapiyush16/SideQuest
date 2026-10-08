@@ -2,7 +2,7 @@
 // Analyzes photos, detects biological subjects, and outputs confidence ratings
 // Never presents uncertain identification as fact.
 
-import { FIELD_GUIDE, findFieldGuideMatch, categoryMeta } from './fieldGuide.js';
+import { FIELD_GUIDE, findFieldGuideMatch, categoryMeta, speciesKey } from './fieldGuide.js';
 
 export class ScannerEngine {
   constructor() {
@@ -99,12 +99,30 @@ export class ScannerEngine {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) throw new Error('Managed vision API HTTP ' + res.status);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || ('Managed vision API HTTP ' + res.status));
+    }
+
     const data = await res.json();
-    const rawText = data?.choices?.[0]?.message?.content;
-    if (!rawText) throw new Error('Managed vision API returned no content');
-    const normalized = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    const parsed = JSON.parse(normalized);
+    let parsed = null;
+
+    if (data && typeof data === 'object') {
+      if (Array.isArray(data.candidates) || data.subject_found !== undefined) {
+        // Direct parsed object from /api/ai
+        parsed = data;
+      } else if (data?.choices?.[0]?.message?.content) {
+        // Raw OpenAI/OpenRouter chat format
+        const rawText = data.choices[0].message.content;
+        const normalized = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        parsed = JSON.parse(normalized);
+      }
+    } else if (typeof data === 'string') {
+      const normalized = data.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+      parsed = JSON.parse(normalized);
+    }
+
+    if (!parsed) throw new Error('Managed vision API returned invalid data format');
     return this.formatVisionResult(parsed);
   }
 
@@ -149,17 +167,19 @@ Return JSON ONLY:
 
   formatVisionResult(parsed) {
     if (parsed && Array.isArray(parsed.candidates) && parsed.candidates.length > 0) {
-      const top = parsed.candidates[0];
-      const match = findFieldGuideMatch(top.common_name, top.scientific_name);
-      const candidates = parsed.candidates.map(c => ({
-        name: c.common_name,
-        scientific: c.scientific_name,
-        category: c.category || 'plant',
-        confidence: Math.min(99, Math.max(10, Math.round(c.confidence || 75))),
-        rarity: match ? match.rarity : 2,
-        region: parsed.region || match?.region || 'Widespread',
-        fact: parsed.fun_fact || match?.fact || ''
-      }));
+      const candidates = parsed.candidates.map(c => {
+        const itemMatch = findFieldGuideMatch(c.common_name, c.scientific_name);
+        return {
+          id: itemMatch ? itemMatch.id : speciesKey(c.common_name, c.scientific_name),
+          name: c.common_name,
+          scientific: c.scientific_name,
+          category: c.category || (itemMatch ? itemMatch.category : 'animal'),
+          confidence: Math.min(99, Math.max(10, Math.round(c.confidence || 75))),
+          rarity: itemMatch ? itemMatch.rarity : 2,
+          region: parsed.region || itemMatch?.region || 'Widespread',
+          fact: parsed.fun_fact || itemMatch?.fact || ''
+        };
+      });
 
       const isConfident = candidates[0].confidence >= 80;
       return {
@@ -170,6 +190,18 @@ Return JSON ONLY:
         source: 'ai_vision'
       };
     }
+
+    if (parsed && parsed.subject_found === false) {
+      return {
+        status: 'not_found',
+        candidates: [],
+        topCandidate: null,
+        otherPercentage: 100,
+        source: 'ai_vision',
+        message: 'No animal, plant, bird, insect, or mineral was clearly detected in this photo. Make sure the subject is centered and well-lit.'
+      };
+    }
+
     return null;
   }
 

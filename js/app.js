@@ -476,6 +476,33 @@ async function startCameraFeed() {
   }
 }
 
+async function compressImageForAI(dataUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 1200;
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 async function analyzeCapturedPhoto(dataUrl) {
   const video = document.getElementById('camera-preview-video');
   const img = document.getElementById('captured-preview-img');
@@ -491,29 +518,31 @@ async function analyzeCapturedPhoto(dataUrl) {
   img.style.display = 'block';
   orbit.style.display = 'none';
 
-  instruction.textContent = 'Analyzing leaves & textures…';
-  subcopy.textContent = 'Field Guide AI is comparing field notes';
+  instruction.textContent = 'Analyzing details & patterns…';
+  subcopy.textContent = 'WildDex AI is identifying your find';
 
   emptyState.style.display = 'none';
   resultBox.style.display = 'block';
   resultBox.innerHTML = `
     <div class="result-card" style="text-align: center; padding: 32px 20px;">
       <div style="font-size: 32px; animation: rotate 4s linear infinite; display: inline-block;">🧭</div>
-      <h3 style="font-family: 'Fraunces', serif; margin: 12px 0 6px;">Field Guide is searching…</h3>
-      <p style="color: var(--muted); font-size: 12px;">Reading natural patterns against 100 species.</p>
+      <h3 style="font-family: 'Fraunces', serif; margin: 12px 0 6px;">WildDex is identifying…</h3>
+      <p style="color: var(--muted); font-size: 12px;">Connecting to AI vision classifier.</p>
     </div>
   `;
 
-  currentCapturedPhoto = dataUrl;
+  // Compress photo so mobile uploads are fast & fit within API payloads
+  const optimizedPhoto = await compressImageForAI(dataUrl);
+  currentCapturedPhoto = optimizedPhoto;
   const state = store.getState();
 
-  const res = await scanner.analyzePhoto(dataUrl, {
+  const res = await scanner.analyzePhoto(optimizedPhoto, {
     aiSettings: state.aiSettings
   });
 
   currentScanAnalysis = res;
   instruction.textContent = 'Field Guide matched your find';
-  subcopy.textContent = 'One possible story, never the only one';
+  subcopy.textContent = 'Tap to save this find to your Pokédex';
   renderScanResult(res);
 }
 
@@ -528,13 +557,13 @@ function renderScanResult(analysis) {
         <div class="possible-heading">
           <div class="result-species-icon lilac">📷</div>
           <div>
-            <h2>We need a clearer answer.</h2>
+            <h2>${analysis?.status === 'not_found' ? 'No subject detected.' : 'We need a clearer photo.'}</h2>
             <p>${analysis?.message || 'This photo could not be identified safely.'}</p>
           </div>
         </div>
         <div class="result-disclaimer">
           <span>ℹ️</span>
-          <span>We will not guess a species from an image we cannot analyze.</span>
+          <span>Try stepping closer or taking the photo in brighter natural daylight.</span>
         </div>
         <button class="button button-outline full" id="btn-scan-retry">📷 Try another photo</button>
       </div>
@@ -555,7 +584,7 @@ function renderScanResult(analysis) {
           <span class="result-confidence">${top.confidence}% <small>confidence</small></span>
         </div>
         <div class="result-species">
-          <div class="result-species-icon sage">🌳</div>
+          <div class="result-species-icon sage">${cat.emoji || '🐾'}</div>
           <div>
             <h2>${top.name}</h2>
             <p>${top.scientific || ''}</p>
@@ -673,7 +702,7 @@ function renderPokedexScreen() {
   document.getElementById('dex-progress-bar').style.width = `${Math.min(100, total)}%`;
 
   // Update Category Count Badges
-  const counts = { plant: 0, bird: 0, insect: 0, flower: 0, other: 0 };
+  const counts = { plant: 0, bird: 0, insect: 0, flower: 0, animal: 0, other: 0 };
   entries.forEach(e => {
     if (counts[e.category] !== undefined) counts[e.category]++;
     else counts.other++;
@@ -684,7 +713,7 @@ function renderPokedexScreen() {
     'cat-count-bird': counts.bird,
     'cat-count-insect': counts.insect,
     'cat-count-flower': counts.flower,
-    'cat-count-other': counts.other
+    'cat-count-other': counts.other + counts.animal
   };
   Object.entries(catMap).forEach(([id, val]) => {
     const el = document.getElementById(id);

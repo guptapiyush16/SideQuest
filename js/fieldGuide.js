@@ -8,7 +8,7 @@ export const categoryMeta = {
   insect: { emoji: '🦋', label: 'Insects', singular: 'Insect', color: '#B79CFF' },
   mushroom: { emoji: '🍄', label: 'Fungi', singular: 'Fungus', color: '#FF9F6B' },
   rock: { emoji: '🪨', label: 'Rocks', singular: 'Rock', color: '#C9B79C' },
-  animal: { emoji: '🐿️', label: 'Animals', singular: 'Animal', color: '#FFC857' },
+  animal: { emoji: '🐕', label: 'Animals', singular: 'Animal', color: '#FFC857' },
   other: { emoji: '✨', label: 'Others', singular: 'Discovery', color: '#9DB7A8' }
 };
 
