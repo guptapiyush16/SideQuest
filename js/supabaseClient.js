@@ -52,6 +52,7 @@ export function logout() {
   token = null;
   currentUser = null;
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
 }
 
 export function isCloudSyncActive() {

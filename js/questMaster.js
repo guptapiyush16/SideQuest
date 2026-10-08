@@ -124,8 +124,13 @@ export async function generateDailyQuests({
   interests = [], 
   minutes = 30, 
   locationName = '', 
-  aiSettings = { mode: 'offline', ollamaUrl: 'http://localhost:11434', gemmaModel: 'gemma2:2b' }
+  aiSettings = { mode: 'offline', ollamaUrl: 'http://localhost:11434', gemmaModel: 'gemma2:2b' },
+  fast = false
 } = {}) {
+  if (fast) {
+    return { quests: generateCuratedQuests({ minutes }), source: 'curated' };
+  }
+
   const mode = aiSettings?.mode || 'offline';
 
   // 1. Google Gemini / Gemma Cloud API
@@ -163,6 +168,10 @@ export async function generateDailyQuests({
   }
 
   // 3. Generative curated selection (High-quality offline fallback)
+  return { quests: generateCuratedQuests({ minutes }), source: 'curated' };
+}
+
+function generateCuratedQuests({ minutes = 30 } = {}) {
   const allowed = QUEST_POOL.filter(q => q.minutes <= Math.max(minutes, 15) + 10);
   const byKind = {
     scan: allowed.filter(q => q.kind === 'scan'),
@@ -186,7 +195,7 @@ export async function generateDailyQuests({
     dateKey
   }));
 
-  return { quests: questsWithIds, source: 'curated' };
+  return questsWithIds;
 }
 
 async function generateQuestsFromOllamaGemma({ interests, minutes, locationName, ollamaUrl, model = 'gemma2:2b' }) {

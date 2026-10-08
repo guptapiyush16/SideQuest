@@ -593,7 +593,7 @@
               </div>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 4px;">
-              <button class="button button-outline small" id="btn-logout">
+              <button class="button button-outline small" id="btn-logout" type="button">
                 Sign out
               </button>
             </div>
@@ -662,9 +662,13 @@
         <div class="modal-icon">🧭</div>
         <span class="eyebrow">TAKE IT OUTSIDE</span>
         <h3>Install your field guide.</h3>
-        <p>Use your browser menu and choose “Add to Home Screen” to keep WildDex one tap away from your next walk.</p>
+        <div id="install-instructions">
+          <p>Keep WildDex one tap away. Choose the instructions for your device:</p>
+          <p><strong>Android / Chrome</strong><br>Tap <b>⋮</b> in the browser, then choose <b>Install app</b> or <b>Add to Home screen</b>.</p>
+          <p><strong>iPhone / iPad</strong><br>Open WildDex in Safari, tap <b>Share</b> <b>□↑</b>, then choose <b>Add to Home Screen</b>.</p>
+        </div>
         <button class="button button-primary" id="btn-confirm-install">
-          Got it ✓
+          Install / Done ✓
         </button>
       </div>
     </div>

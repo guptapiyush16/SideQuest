@@ -1432,7 +1432,8 @@ async function refreshQuests() {
     interests: state.interests,
     minutes: state.minutesAvailable,
     locationName: state.currentLocationName,
-    aiSettings: state.aiSettings
+    aiSettings: state.aiSettings,
+    fast: true
   });
   store.setTodayQuests(res.quests);
 }
