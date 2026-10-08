@@ -202,14 +202,17 @@ Return JSON ONLY:
       };
     }
 
-    if (parsed && parsed.subject_found === false) {
+    if (parsed && (parsed.subject_found === false || parsed.reason === 'screen_detected')) {
+      const isScreen = parsed.reason === 'screen_detected';
       return {
-        status: 'not_found',
+        status: isScreen ? 'screen_detected' : 'not_found',
         candidates: [],
         topCandidate: null,
         otherPercentage: 100,
         source: 'ai_vision',
-        message: 'No animal, plant, bird, insect, or mineral was clearly detected in this photo. Make sure the subject is centered and well-lit.'
+        message: isScreen
+          ? 'Screen detected! WildDex is an authentic IRL field guide. Please step outside and photograph real physical animals, plants, or nature, not a digital screen.'
+          : 'No animal, plant, bird, insect, or mineral was clearly detected in this photo. Make sure the subject is centered and well-lit.'
       };
     }
 

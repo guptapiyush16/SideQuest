@@ -14,3 +14,10 @@ dist/
 atlas-credentials.env
 .DS_Store
 image*.png
+.agents/
+.claude/
+.cursor/
+.mcp.json
+e2e.config.ts
+tests/
+.e2e/

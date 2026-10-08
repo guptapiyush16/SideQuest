@@ -10,11 +10,24 @@ const MODEL = (process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash').replac
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 
-const VISION_PROMPT = `Identify the primary animal, plant, flower, bird, insect, mushroom, or rock visible in this photo.
-Even if the photo is taken of a computer/laptop screen, phone display, monitor, photo printout, book, or indoors, ALWAYS identify the biological subject depicted (dog breed, cat, animal, bird, plant, flower, insect, mushroom, rock).
-Do not reject photos of screens or monitors if an animal, plant, or nature subject is visible.
-Only set subject_found to false if the photo is completely blank, black, pure blur, or contains no animals, plants, or nature subjects whatsoever.
-Output JSON ONLY with this format:
+const VISION_PROMPT = `You are the AI Field Guide Vision System for "WildDex", an outdoor real-world nature exploration game.
+
+CRITICAL ANTI-CHEAT & ANTI-SCREEN RULE:
+WildDex ONLY allows real, physical subjects encountered in the physical outdoors.
+DO NOT allow users to photograph computer monitors, laptop displays, TVs, phones, tablets, digital screens, or screenshots!
+Check carefully for telltale signs of a digital screen: pixel grid, moiré interference patterns, monitor frames or bezels, laptop keyboard or desk surrounds, screen reflections, display backlights, browser chrome, or scanlines.
+If this photo was taken of a computer monitor, laptop screen, television, phone display, tablet screen, or digital screenshot:
+YOU MUST REJECT IT IMMEDIATELY. Output valid JSON ONLY:
+{"subject_found":false,"reason":"screen_detected"}
+
+IDENTIFICATION INSTRUCTIONS:
+If this photo is a genuine physical subject in the real world:
+Identify the primary animal, plant, flower, bird, insect, mushroom, or rock visible.
+If no nature or biological subject is present, or if the photo is blank, blurry, or indoor furniture/objects:
+Output valid JSON ONLY:
+{"subject_found":false,"reason":"no_subject"}
+
+If a valid natural subject is found in the physical world, output valid JSON ONLY:
 {"subject_found":true,"candidates":[{"common_name":"Species or Breed Name","scientific_name":"Scientific name","category":"animal|plant|flower|bird|insect|mushroom|rock","confidence":95}],"region":"Native region or habitat","fun_fact":"One interesting sentence about this find."}`;
 
 const QUEST_PROMPT = ({ interests, minutes, locationName }) => `You are the Quest Master for the outdoor exploration game "WildDex".
@@ -155,7 +168,7 @@ module.exports = async function handler(req, res) {
             imageBase64: body.imageBase64,
             mimeType: body.mimeType
           });
-          if (direct && direct.candidates) {
+          if (direct && (direct.candidates || direct.subject_found === false)) {
             return json(res, 200, direct);
           }
         } catch (err) {

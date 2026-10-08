@@ -577,29 +577,41 @@ async function analyzeCapturedPhoto(dataUrl) {
   });
 
   currentScanAnalysis = res;
-  instruction.textContent = 'Field Guide matched your find';
-  subcopy.textContent = 'Tap to save this find to your WildDex';
+  if (res?.status === 'screen_detected') {
+    instruction.textContent = 'Digital screen detected';
+    subcopy.textContent = 'WildDex requires real-world physical subjects';
+  } else if (res?.topCandidate) {
+    instruction.textContent = 'Field Guide matched your find';
+    subcopy.textContent = 'Tap to save this find to your WildDex';
+  } else {
+    instruction.textContent = 'Identification needed';
+    subcopy.textContent = 'Try another photo in natural daylight';
+  }
   renderScanResult(res);
 }
 
 function renderScanResult(analysis) {
   const resultBox = document.getElementById('scan-active-result-box');
   if (!analysis?.topCandidate) {
+    const isScreen = analysis?.status === 'screen_detected';
     resultBox.innerHTML = `
       <div class="result-card uncertain-result">
         <div class="result-top">
-          <span class="result-state possible-state"><span class="confidence-dot"></span> NEEDS AI VISION</span>
+          <span class="result-state possible-state" style="${isScreen ? 'color: #f59e0b; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3);' : ''}">
+            <span class="confidence-dot" style="${isScreen ? 'background: #f59e0b;' : ''}"></span>
+            ${isScreen ? 'SCREEN DETECTED 💻🚫' : 'NEEDS AI VISION'}
+          </span>
         </div>
         <div class="possible-heading">
-          <div class="result-species-icon lilac">📷</div>
+          <div class="result-species-icon lilac">${isScreen ? '🚫' : '📷'}</div>
           <div>
-            <h2>${analysis?.status === 'not_found' ? 'No subject detected.' : 'We need a clearer photo.'}</h2>
+            <h2>${isScreen ? 'Screen detected!' : (analysis?.status === 'not_found' ? 'No subject detected.' : 'We need a clearer photo.')}</h2>
             <p>${analysis?.message || 'This photo could not be identified safely.'}</p>
           </div>
         </div>
         <div class="result-disclaimer">
           <span>ℹ️</span>
-          <span>Try stepping closer or taking the photo in brighter natural daylight.</span>
+          <span>${isScreen ? 'WildDex is built for real-world exploration. Step outside and photograph real physical animals, plants, or nature!' : 'Try stepping closer or taking the photo in brighter natural daylight.'}</span>
         </div>
         <button class="button button-outline full" id="btn-scan-retry">📷 Try another photo</button>
       </div>
