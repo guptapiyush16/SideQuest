@@ -747,10 +747,19 @@ function renderPokedexScreen() {
   document.getElementById('dex-progress-bar').style.width = `${total ? Math.min(100, total % 100 || 100) : 0}%`;
   const milestoneLabel = document.getElementById('dex-milestone-label');
   if (milestoneLabel) {
-    milestoneLabel.textContent = total >= 100
-      ? '🏅 CENTURY NATURALIST · NEXT 200'
-      : 'NEXT BADGE AT 100';
-    milestoneLabel.classList.toggle('milestone-earned', total >= 100);
+    const milestones = [
+      [500, '🏆 WILDERNESS LEGEND · ALL BADGES EARNED'],
+      [400, '🌟 MASTER NATURALIST · NEXT 500'],
+      [300, '🧭 TRAIL CARTOGRAPHER · NEXT 400'],
+      [200, '🥇 FIELD NATURALIST · NEXT 300'],
+      [100, '🏅 CENTURY NATURALIST · NEXT 200']
+    ];
+    const currentMilestone = milestones.find(([threshold]) => total >= threshold);
+    const nextMilestone = [100, 200, 300, 400, 500].find(threshold => total < threshold);
+    milestoneLabel.textContent = currentMilestone
+      ? currentMilestone[1]
+      : `NEXT BADGE AT ${nextMilestone}`;
+    milestoneLabel.classList.toggle('milestone-earned', Boolean(currentMilestone));
   }
 
   // Update Category Count Badges
@@ -1133,15 +1142,6 @@ function bindEventHandlers() {
       } else {
         navigateTo('scan');
       }
-    });
-  }
-
-  // Active Quest: Demo Walk Button
-  const demoWalk = document.getElementById('btn-quest-demo-walk');
-  if (demoWalk) {
-    demoWalk.addEventListener('click', () => {
-      const xpEvent = store.addWalkingDistance(0.1, userCoords);
-      if (xpEvent) showToast(`1 km walk logged · +${xpEvent.amount} XP`);
     });
   }
 
