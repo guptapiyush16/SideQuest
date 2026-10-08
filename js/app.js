@@ -183,7 +183,7 @@ function navigateTo(viewId, updateHash = true) {
       home: 'Your field notes',
       quest: 'Active Quest',
       scan: 'Field Guide Scanner',
-      pokedex: 'My IRL Pokédex',
+      pokedex: 'My IRL WildDex',
       adventures: 'Trail Log',
       profile: 'Field Kit & Settings'
     };
@@ -578,7 +578,7 @@ async function analyzeCapturedPhoto(dataUrl) {
 
   currentScanAnalysis = res;
   instruction.textContent = 'Field Guide matched your find';
-  subcopy.textContent = 'Tap to save this find to your Pokédex';
+  subcopy.textContent = 'Tap to save this find to your WildDex';
   renderScanResult(res);
 }
 
@@ -636,7 +636,7 @@ function renderScanResult(analysis) {
           <span>Confidence is a guide, not a guarantee. Confirm what you can in a trusted field guide.</span>
         </div>
         <button class="button button-primary full" id="btn-add-pokedex">
-          ${existing ? 'Already discovered · +5 XP' : 'Add to Pokédex · +50 XP'}
+          ${existing ? 'Already discovered · +5 XP' : 'Add to WildDex · +50 XP'}
         </button>
       </div>
     `;
@@ -718,7 +718,7 @@ function confirmDiscovery(candidate) {
   });
 
   if (result.isNew) {
-    showToast(`Added to your Pokédex · +50 XP`);
+    showToast(`Added to your WildDex · +50 XP`);
     triggerConfetti();
   } else {
     showToast(`Already discovered · +5 XP for going back`);

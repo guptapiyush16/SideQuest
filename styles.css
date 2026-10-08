@@ -2167,7 +2167,10 @@ button:focus-visible {
 @media (max-width: 820px) {
   .sidebar { display: none; }
   .topbar { height: 62px; padding: 0 20px; }
-  .page-wrap { padding: 34px 18px 96px; }
+  .page-wrap {
+    padding: 34px 18px 128px;
+    scroll-padding-bottom: 128px;
+  }
   
   .mobile-nav {
     position: fixed;
@@ -2183,6 +2186,10 @@ button:focus-visible {
     border-radius: 16px;
     box-shadow: 0 12px 30px rgba(23,42,58,.25);
     padding: 6px;
+  }
+
+  #view-scan {
+    padding-bottom: 32px;
   }
   
   .mobile-nav button {
