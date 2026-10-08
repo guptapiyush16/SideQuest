@@ -23,9 +23,9 @@ The PWA and API run from the same origin. Atlas stores accounts, progress, and G
 
 ### Managed AI deployment
 
-Configure `OPEN_ROUTER_APIKEY` as a server-side environment variable. Do not add it to the repository, HTML, JavaScript, local storage, or a client-side build. The default model is `google/gemma-4-26b-a4b-it:free`; optionally override it with `OPENROUTER_MODEL`.
+Configure `OPEN_ROUTER_APIKEY` as a server-side environment variable. Do not add it to the repository, HTML, JavaScript, local storage, or a client-side build. The default model is `google/gemini-2.5-flash`; optionally override it with `OPENROUTER_MODEL` or provide `GEMINI_API_KEY`.
 
-The PWA calls `/api/ai` for quest generation, image identification, and health checks. The server forwards requests to OpenRouter without exposing the credential to the browser.
+The PWA calls `/api/ai` for quest generation, image identification, and health checks. The server forwards requests to OpenRouter/Gemini without exposing credentials to the browser.
 
 ### MongoDB Atlas and accounts
 
@@ -36,7 +36,8 @@ MONGODB_URI=mongodb+srv://...
 MONGODB_DB=wilddex
 AUTH_SECRET=long-random-secret
 OPEN_ROUTER_APIKEY=...
-OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
+OPENROUTER_MODEL=google/gemini-2.5-flash
+GEMINI_API_KEY=...
 ```
 
 Users create accounts with a unique username, password, and display name. Login requires only the username and password. Every new account starts with zero XP, an empty Pokédex, no quests, and no adventure history. Captured photos are compressed in the browser and stored in MongoDB GridFS; the database stores the associated GridFS file ID with each discovery.
@@ -103,65 +104,29 @@ Use the password generated during setup rather than committing it to the reposit
 
 ---
 
-## 🤖 Google Gemma AI Integration
+## 🤖 Multimodal AI Architecture
 
-WildDex is built around **2 focused AI engines** powered by **Google Gemma**:
+WildDex is built around **2 focused AI engines**:
 
-| AI Engine | Model | Purpose |
+| AI Engine | Model / Provider | Purpose |
 |---|---|---|
-| **1. 🎮 Quest Master** | **Gemma 2** (`gemma2:2b` / `gemma2:9b`) | Generates 3 safe, context-aware outdoor quests tailored to your available time, location, and nature interests. |
-| **2. 📸 Field Guide Scanner** | **PaliGemma** (`paligemma`) | Multimodal vision model that classifies camera photos of plants, birds, insects, and minerals with honest confidence ratings. |
-
-*(Note: AI #3 "Adventure Memory" has been removed to keep the core loop ultra-lean and focused.)*
+| **1. 🎮 Quest Master** | Google Gemini / OpenRouter | Generates 3 safe, context-aware outdoor quests tailored to your available time, location, and nature interests. |
+| **2. 📸 Field Guide Scanner** | Google Gemini / OpenRouter Multimodal | Classifies camera photos of plants, birds, insects, animals, and minerals with honest confidence ratings. |
 
 ---
 
-### How to Use Google Gemma in WildDex
+### Managed Production AI Deployment
 
-You have **3 flexible options** to run Gemma:
+For production deployment, configure the server-side credentials in Render:
 
-#### Option A: Run 100% Locally & Offline with Ollama (Recommended for Privacy)
-Run Gemma directly on your laptop or phone local network with zero cloud API keys:
-
-1. **Install Ollama** from [ollama.com](https://ollama.com).
-2. **Pull the Gemma models:**
-   ```bash
-   # 1. Text Quest Master (Lightweight Gemma 2 - ~1.6 GB)
-   ollama pull gemma2:2b
-
-   # 2. Vision Field Guide Scanner (Multimodal PaliGemma - ~2.9 GB)
-   ollama pull paligemma
-   ```
-3. **Start Ollama with Browser CORS Enabled:**  
-   Because WildDex runs in your browser, Ollama needs to allow browser requests:
-   - **Windows (PowerShell):**
-     ```powershell
-     $env:OLLAMA_ORIGINS="*"
-     ollama serve
-     ```
-   - **Mac / Linux:**
-     ```bash
-     OLLAMA_ORIGINS="*" ollama serve
-     ```
-4. **Connect in WildDex:**
-   - Open WildDex → Tap **🎒 Profile** tab.
-   - Under **Connect Google Gemma**, select:  
-     `Google Gemma via Ollama (Local: localhost:11434)`.
-   - Ensure the model is set to `gemma2:2b` (or `gemma2:9b`).
-   - Click **"Test Connection"** → You will see `✅ Ollama reachable! Model "gemma2:2b" found ready.`
-   - Click **"Save AI Settings"**.
+1. Add `OPEN_ROUTER_APIKEY` (and optionally `GEMINI_API_KEY`) to Render environment variables.
+2. Set `OPENROUTER_MODEL` to `google/gemini-2.5-flash`.
+3. The server provides a resilient dual-provider failover proxy at `/api/ai` so secrets remain protected.
 
 ---
 
-#### Managed vision AI with OpenRouter
-For production deployment, use the server-side OpenRouter integration:
-
-1. Create an API key at [openrouter.ai](https://openrouter.ai).
-2. Add it to Render as `OPEN_ROUTER_APIKEY`.
-3. Set `OPENROUTER_MODEL` to `openrouter/free`.
-4. Redeploy the service and use **Test Connection** in the Profile screen.
-
-The browser calls the WildDex server, and the server calls OpenRouter. The API key is never exposed to users.
+### Built-in Field Guide (Zero Setup / Offline Fallback)
+If network connectivity is unavailable, WildDex automatically uses its built-in deterministic taxonomy engine with **100 curated flora & fauna species** and a generative quest engine. You can use the app anywhere outdoors even with zero internet.
 
 ---
 
