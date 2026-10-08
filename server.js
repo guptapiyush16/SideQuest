@@ -24,7 +24,7 @@ app.use(express.static(__dirname, { extensions: ['html'] }));
 app.post('/api/ai', aiHandler);
 
 function tokenFor(user) {
-  return jwt.sign({ sub: user._id.toString(), email: user.email }, jwtSecret, { expiresIn: '30d' });
+  return jwt.sign({ sub: user._id.toString(), username: user.username }, jwtSecret, { expiresIn: '30d' });
 }
 
 async function auth(req, res, next) {
@@ -41,16 +41,20 @@ async function auth(req, res, next) {
   }
 }
 
-function cleanEmail(value) {
+function cleanUsername(value) {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
-async function createUser(email, password, name = 'Explorer') {
-  if (!email.includes('@') || password.length < 8) throw new Error('Use a valid email and an 8+ character password');
-  const existing = await db.collection('users').findOne({ email });
-  if (existing) throw new Error('An account with this email already exists');
+async function createUser(username, password, name = 'Explorer') {
+  if (!/^[a-z0-9_]{3,24}$/.test(username)) {
+    throw new Error('Username must be 3-24 characters using letters, numbers, or underscores');
+  }
+  if (password.length < 8) throw new Error('Use an 8+ character password');
+  if (!name.trim()) throw new Error('Name is required');
+  const existing = await db.collection('users').findOne({ username });
+  if (existing) throw new Error('That username is already taken');
   const user = {
-    email,
+    username,
     passwordHash: await bcrypt.hash(password, 12),
     name: name.trim().slice(0, 80) || 'Explorer',
     xp: 0,
@@ -66,19 +70,24 @@ async function createUser(email, password, name = 'Explorer') {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const user = await createUser(cleanEmail(req.body.email), String(req.body.password || ''), String(req.body.name || 'Explorer'));
+    const user = await createUser(
+      cleanUsername(req.body.username),
+      String(req.body.password || ''),
+      String(req.body.name || '')
+    );
     res.status(201).json({ token: tokenFor(user), user: publicUser(user) });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const status = error.code === 11000 ? 409 : 400;
+    res.status(status).json({ error: error.code === 11000 ? 'That username is already taken' : error.message });
   }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const email = cleanEmail(req.body.email);
-    const user = await db.collection('users').findOne({ email });
+    const username = cleanUsername(req.body.username);
+    const user = await db.collection('users').findOne({ username });
     if (!user || !(await bcrypt.compare(String(req.body.password || ''), user.passwordHash))) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid username or password' });
     }
     res.json({ token: tokenFor(user), user: publicUser(user) });
   } catch (error) {
@@ -164,7 +173,7 @@ app.get('/api/health', async (_req, res) => {
 });
 
 function publicUser(user) {
-  return { id: user._id.toString(), email: user.email, name: user.name, xp: user.xp, level: user.level, interests: user.interests };
+  return { id: user._id.toString(), username: user.username, name: user.name, xp: user.xp, level: user.level, interests: user.interests };
 }
 
 async function start() {
@@ -175,8 +184,29 @@ async function start() {
   });
   db = client.db(dbName);
   photos = new GridFSBucket(db, { bucketName: 'photos' });
-  await db.collection('users').createIndex({ email: 1 }, { unique: true });
+  await migrateUsernames();
+  try { await db.collection('users').dropIndex('email_1'); } catch (error) {
+    if (error.codeName !== 'IndexNotFound') throw error;
+  }
+  await db.collection('users').createIndex({ username: 1 }, { unique: true });
   app.listen(port, '0.0.0.0', () => console.log(`WildDex server listening on port ${port}`));
+}
+
+async function migrateUsernames() {
+  const users = await db.collection('users').find({ username: { $exists: false } }).toArray();
+  for (const user of users) {
+    const base = String(user.email || 'explorer')
+      .split('@')[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, 18) || 'explorer';
+    let username = base;
+    let suffix = 1;
+    while (await db.collection('users').findOne({ username })) {
+      username = `${base}${suffix++}`;
+    }
+    await db.collection('users').updateOne({ _id: user._id }, { $set: { username } });
+  }
 }
 
 start().catch(error => {

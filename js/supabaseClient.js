@@ -26,10 +26,10 @@ export async function initSupabaseClient() {
   }
 }
 
-export async function register(email, password, name) {
+export async function register(username, password, name) {
   const result = await request('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password, name })
+    body: JSON.stringify({ username, password, name })
   });
   token = result.token;
   currentUser = result.user;
@@ -37,10 +37,10 @@ export async function register(email, password, name) {
   return currentUser;
 }
 
-export async function login(email, password) {
+export async function login(username, password) {
   const result = await request('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ username, password })
   });
   token = result.token;
   currentUser = result.user;

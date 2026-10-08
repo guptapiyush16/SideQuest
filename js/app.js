@@ -88,11 +88,11 @@ function showAuthScreen() {
       <span class="eyebrow">WILDDEX</span>
       <h1 style="font-family:Fraunces,serif;margin:10px 0;">Your field journal.</h1>
       <p style="color:#748078;font-size:13px;">Sign in to keep your quests, discoveries, and photos private.</p>
-      <input id="auth-email" type="email" required autocomplete="email" placeholder="Email" class="supabase-input">
+      <input id="auth-username" type="text" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" placeholder="Username" class="supabase-input">
       <input id="auth-password" type="password" required minlength="8" autocomplete="current-password" placeholder="Password (8+ characters)" class="supabase-input">
       <input id="auth-name" type="text" autocomplete="name" placeholder="Name (only needed for sign up)" class="supabase-input">
       <div style="display:flex;gap:8px;margin-top:10px;">
-        <button class="button button-primary" type="submit" data-mode="login">Sign in</button>
+        <button class="button button-primary" type="submit" id="auth-submit">Sign in</button>
         <button class="button button-outline" type="button" id="auth-register">Create account</button>
       </div>
       <p id="auth-message" style="font-size:12px;color:#d66b3d;"></p>
@@ -101,14 +101,28 @@ function showAuthScreen() {
     document.body.classList.add('app-ready');
   const form = overlay.querySelector('#auth-form');
   const message = overlay.querySelector('#auth-message');
+  const nameInput = overlay.querySelector('#auth-name');
+  const registerButton = overlay.querySelector('#auth-register');
+  const submitButton = overlay.querySelector('#auth-submit');
+  let mode = 'login';
+  const setMode = (nextMode) => {
+    mode = nextMode;
+    const registering = mode === 'register';
+    nameInput.style.display = registering ? 'block' : 'none';
+    nameInput.required = registering;
+    nameInput.value = registering ? nameInput.value : '';
+    submitButton.textContent = registering ? 'Create account' : 'Sign in';
+    registerButton.textContent = registering ? 'Back to sign in' : 'Create account';
+  };
+  setMode('login');
   const submit = async (mode) => {
-    const email = overlay.querySelector('#auth-email').value;
+    const username = overlay.querySelector('#auth-username').value;
     const password = overlay.querySelector('#auth-password').value;
-    const name = overlay.querySelector('#auth-name').value;
+    const name = nameInput.value;
     try {
       message.textContent = 'Connecting…';
-      if (mode === 'register') await register(email, password, name);
-      else await login(email, password);
+      if (mode === 'register') await register(username, password, name);
+      else await login(username, password);
       overlay.remove();
       store.resetToEmpty();
       bootApp();
@@ -118,9 +132,12 @@ function showAuthScreen() {
   };
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    submit('login');
+    submit(mode);
   });
-  overlay.querySelector('#auth-register').addEventListener('click', () => submit('register'));
+  registerButton.addEventListener('click', () => {
+    setMode(mode === 'register' ? 'login' : 'register');
+    nameInput.focus();
+  });
 }
 
 // View Navigation Router

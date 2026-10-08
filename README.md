@@ -39,7 +39,7 @@ OPEN_ROUTER_APIKEY=...
 OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
 ```
 
-Users create accounts with email and password. Every new account starts with zero XP, an empty Pokédex, no quests, and no adventure history. Captured photos are compressed in the browser and stored in MongoDB GridFS; the database stores the associated GridFS file ID with each discovery.
+Users create accounts with a unique username, password, and display name. Login requires only the username and password. Every new account starts with zero XP, an empty Pokédex, no quests, and no adventure history. Captured photos are compressed in the browser and stored in MongoDB GridFS; the database stores the associated GridFS file ID with each discovery.
 
 The demo account created for local testing is:
 
