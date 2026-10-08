@@ -115,6 +115,11 @@ export const QUEST_POOL = [
   }
 ];
 
+function getLocalDateKey() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export async function generateDailyQuests({ 
   interests = [], 
   minutes = 30, 
@@ -173,7 +178,7 @@ export async function generateDailyQuests({
     pickRandom(byKind.observe.length ? byKind.observe : QUEST_POOL.filter(q => q.kind === 'observe'))
   ];
 
-  const dateKey = new Date().toISOString().split('T')[0];
+  const dateKey = getLocalDateKey();
   const questsWithIds = selected.map((q, idx) => ({
     ...q,
     id: `quest_${dateKey}_${idx}`,
@@ -237,7 +242,7 @@ async function generateQuestsFromGoogleApi({ interests, minutes, locationName })
 
 function formatParsedQuests(parsed) {
   if (Array.isArray(parsed?.quests) && parsed.quests.length >= 3) {
-    const dateKey = new Date().toISOString().split('T')[0];
+    const dateKey = getLocalDateKey();
     return parsed.quests.slice(0, 3).map((q, idx) => ({
       emoji: q.emoji || '🌳',
       title: q.title || 'Side Quest',

@@ -61,6 +61,18 @@ export class GameStore {
   constructor() {
     this.listeners = new Set();
     this.state = this.loadInitialState();
+    this.resetDailyStateIfNeeded();
+  }
+
+  resetDailyStateIfNeeded() {
+    const today = getTodayKey();
+    if (this.state.todayQuestsDate === today) return;
+    this.state.todayQuests = [];
+    this.state.todayQuestsDate = today;
+    this.state.activeQuestId = null;
+    this.state.activeQuestData = null;
+    this.state.dailyBonusClaimed = false;
+    this.save();
   }
 
   loadInitialState() {
@@ -73,6 +85,7 @@ export class GameStore {
           xp: parsed.xp || 0,
           pokedex: parsed.pokedex || {},
           todayQuests: parsed.todayQuests || [],
+          todayQuestsDate: parsed.todayQuestsDate || null,
           activeQuestId: parsed.activeQuestId || null,
           activeQuestData: parsed.activeQuestData || null,
           history: parsed.history || {},
@@ -96,6 +109,7 @@ export class GameStore {
       xp: 0,
       pokedex: {},
       todayQuests: [],
+      todayQuestsDate: null,
       activeQuestId: null,
       activeQuestData: null,
       history: {},
@@ -240,6 +254,7 @@ export class GameStore {
   // --- QUEST LIFECYCLE ---
   setTodayQuests(quests) {
     this.state.todayQuests = quests;
+    this.state.todayQuestsDate = getTodayKey();
     this.save();
     quests.forEach(q => syncQuest(q));
   }

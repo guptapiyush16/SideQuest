@@ -10,10 +10,12 @@ const MODEL = (process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash').replac
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 
-const VISION_PROMPT = `Identify the primary visible subject in this photo. It may be an animal (including dog, cat, mammal, reptile), plant, flower, bird, insect, mushroom, or rock.
-Do not guess a bird or plant when the image shows a mammal or pet. If the image is a screenshot, blank, person, or non-natural manufactured item, set subject_found to false.
+const VISION_PROMPT = `Identify the primary animal, plant, flower, bird, insect, mushroom, or rock visible in this photo.
+Even if the photo is taken of a computer/laptop screen, phone display, monitor, photo printout, book, or indoors, ALWAYS identify the biological subject depicted (dog breed, cat, animal, bird, plant, flower, insect, mushroom, rock).
+Do not reject photos of screens or monitors if an animal, plant, or nature subject is visible.
+Only set subject_found to false if the photo is completely blank, black, pure blur, or contains no animals, plants, or nature subjects whatsoever.
 Output JSON ONLY with this format:
-{"subject_found":true,"candidates":[{"common_name":"Species Name","scientific_name":"Scientific name","category":"animal|plant|flower|bird|insect|mushroom|rock","confidence":95}],"region":"Native region or habitat","fun_fact":"One interesting sentence about this find."}`;
+{"subject_found":true,"candidates":[{"common_name":"Species or Breed Name","scientific_name":"Scientific name","category":"animal|plant|flower|bird|insect|mushroom|rock","confidence":95}],"region":"Native region or habitat","fun_fact":"One interesting sentence about this find."}`;
 
 const QUEST_PROMPT = ({ interests, minutes, locationName }) => `You are the Quest Master for the outdoor exploration game "WildDex".
 Generate exactly 3 safe, fun outdoor quests for an explorer in ${locationName || 'their local city'}.

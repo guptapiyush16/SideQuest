@@ -931,8 +931,11 @@ function formatDateKey(k) {
 }
 
 function formatDayBadge(k) {
-  const todayKey = new Date().toISOString().split('T')[0];
-  const yesterdayKey = new Date(Date.now() - 864e5).toISOString().split('T')[0];
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
   if (k === todayKey) return 'TODAY';
   if (k === yesterdayKey) return 'YESTERDAY';
   const d = new Date(k + 'T00:00:00');

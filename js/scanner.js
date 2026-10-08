@@ -166,8 +166,19 @@ Return JSON ONLY:
   }
 
   formatVisionResult(parsed) {
-    if (parsed && Array.isArray(parsed.candidates) && parsed.candidates.length > 0) {
-      const candidates = parsed.candidates.map(c => {
+    if (!parsed) return null;
+    let candidatesList = parsed.candidates;
+    if (!Array.isArray(candidatesList) && (parsed.common_name || parsed.species)) {
+      candidatesList = [{
+        common_name: parsed.common_name || parsed.species,
+        scientific_name: parsed.scientific_name || parsed.scientific || '',
+        category: parsed.category || 'animal',
+        confidence: parsed.confidence || 90
+      }];
+    }
+
+    if (Array.isArray(candidatesList) && candidatesList.length > 0) {
+      const candidates = candidatesList.map(c => {
         const itemMatch = findFieldGuideMatch(c.common_name, c.scientific_name);
         return {
           id: itemMatch ? itemMatch.id : speciesKey(c.common_name, c.scientific_name),
