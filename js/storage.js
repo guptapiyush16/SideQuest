@@ -1,7 +1,7 @@
 // WildDex — Game State & Local-First Storage
 // Orchestrates XP, Pokédex Deduplication, Quests, Adventures and Cloud Syncing
 
-import { speciesKey, findFieldGuideMatch } from './fieldGuide.js';
+import { speciesKey, findFieldGuideMatch, normalizeCategory } from './fieldGuide.js';
 import { 
   syncProfile, 
   syncPokedexEntry, 
@@ -227,7 +227,7 @@ export class GameStore {
       number: Object.keys(this.state.pokedex).length + 1,
       name: candidate.name,
       scientific: candidate.scientific || match?.scientific || '',
-      category: candidate.category || match?.category || 'other',
+      category: normalizeCategory(candidate.category || match?.category, candidate.name, candidate.scientific),
       rarity: candidate.rarity || match?.rarity || 1,
       region: candidate.region || match?.region || 'Wild',
       fact: candidate.fact || match?.fact || '',

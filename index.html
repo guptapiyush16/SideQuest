@@ -318,7 +318,7 @@
                   <span style="font-size: 32px;">✨</span>
                 </div>
                 <span class="scan-instruction" id="scan-instruction-text">Place a find inside the frame</span>
-                <span class="scan-subcopy" id="scan-subcopy-text">Plants · birds · flowers · mushrooms · insects · rocks · other</span>
+                <span class="scan-subcopy" id="scan-subcopy-text">Plants · birds · flowers · mushrooms · insects · rocks · animals</span>
               </div>
 
               <div class="scanner-controls">
@@ -329,9 +329,6 @@
                   🖼️ Choose photo from device
                   <input type="file" id="input-file-photo" accept="image/*" capture="environment" style="display: none;">
                 </label>
-                <button class="text-button" id="btn-demo-uncertain" style="margin-top: 6px;">
-                  <span>Try a low-confidence example</span> →
-                </button>
               </div>
             </section>
 
@@ -367,7 +364,7 @@
             </div>
             <div class="collection-stamp">
               <span id="dex-total-discovered">23</span>
-              <small>/ 100</small>
+              <small id="dex-milestone-label">NEXT BADGE AT 100</small>
               <label>DISCOVERED</label>
             </div>
           </div>
@@ -404,8 +401,13 @@
                 <span>Flowers</span>
               </div>
               <div class="category-count">
+                <div class="mini-icon orange">🐕</div>
+                <strong id="cat-count-animal">0</strong>
+                <span>Animals</span>
+              </div>
+              <div class="category-count">
                 <div class="mini-icon stone">🪨</div>
-                <strong id="cat-count-other">2</strong>
+                <strong id="cat-count-other">0</strong>
                 <span>Others</span>
               </div>
             </div>
@@ -424,10 +426,6 @@
               <button class="cat-chip" data-cat="animal">🐕 Animals</button>
             </div>
 
-            <div class="pokedex-toggle-tabs">
-              <button class="dex-tab-btn active" id="btn-dex-mode-mine">My Collection</button>
-              <button class="dex-tab-btn" id="btn-dex-mode-guide">Field Guide (100)</button>
-            </div>
           </div>
 
           <div class="discovery-grid" id="pokedex-entries-grid">

@@ -2,7 +2,7 @@
 // Analyzes photos, detects biological subjects, and outputs confidence ratings
 // Never presents uncertain identification as fact.
 
-import { FIELD_GUIDE, findFieldGuideMatch, categoryMeta, speciesKey } from './fieldGuide.js';
+import { FIELD_GUIDE, findFieldGuideMatch, categoryMeta, normalizeCategory, speciesKey } from './fieldGuide.js';
 
 export class ScannerEngine {
   constructor() {
@@ -184,7 +184,7 @@ Return JSON ONLY:
           id: itemMatch ? itemMatch.id : speciesKey(c.common_name, c.scientific_name),
           name: c.common_name,
           scientific: c.scientific_name,
-          category: c.category || (itemMatch ? itemMatch.category : 'animal'),
+          category: normalizeCategory(c.category || itemMatch?.category, c.common_name, c.scientific_name),
           confidence: Math.min(99, Math.max(10, Math.round(c.confidence || 75))),
           rarity: itemMatch ? itemMatch.rarity : 2,
           region: parsed.region || itemMatch?.region || 'Widespread',

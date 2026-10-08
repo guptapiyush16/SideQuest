@@ -77,12 +77,12 @@ Use the password generated during setup rather than committing it to the reposit
   - **Local AI Support:** Can connect to local Ollama vision models (e.g. `llama3.2-vision` / `llava`).
 
 ### 3. 📖 Your IRL Pokédex (The Stickiness Engine)
-- **The Core Mechanic:** **One species = one Pokédex entry.**
+- **The Core Mechanic:** **One species = one WildDex entry.**
   - If the user photographs a duplicate species, they see:  
     `Already discovered! 🌳 +5 XP` instead of a duplicate entry.
 - **Field Guide Catalog (100 Species):**
   - Includes trees, flowers, birds, insects, fungi, rocks, and urban wildlife (*Indian Banyan, Peepal Tree, Bougainvillea, Kingfisher, Peafowl, Damselfly, etc.*).
-  - Toggle between **"My Collection"** and **"Field Guide (100)"** to view locked silhouettes (`???`) and rarity stars.
+  - Browse your personal WildDex collection by category, including plants, birds, insects, flowers, fungi, rocks, and animals.
 - **Species Detail Sheet:** Tap any collected species to inspect sighting timestamps, coordinates, photos, and natural history facts.
 
 ### 4. ⭐ XP + Levels (Simple RPG Math)

@@ -4,7 +4,7 @@
 import { store, XP_RULES } from './storage.js';
 import { generateDailyQuests } from './questMaster.js';
 import { ScannerEngine } from './scanner.js';
-import { FIELD_GUIDE, categoryMeta, findFieldGuideMatch } from './fieldGuide.js';
+import { categoryMeta, findFieldGuideMatch, normalizeCategory } from './fieldGuide.js';
 import { 
   getAnonymousDeviceId, 
   initSupabaseClient,
@@ -17,7 +17,7 @@ import {
 const scanner = new ScannerEngine();
 let activeView = 'home';
 let currentDexCategory = 'all';
-let currentDexMode = 'mine'; // 'mine' | 'guide'
+let currentDexMode = 'mine';
 let currentCapturedPhoto = null;
 let currentScanAnalysis = null;
 let questTimerInterval = null;
@@ -732,13 +732,29 @@ function renderPokedexScreen() {
   const state = store.getState();
   const entries = Object.values(state.pokedex);
   const total = entries.length;
+  let categoriesChanged = false;
+  entries.forEach(entry => {
+    const normalized = normalizeCategory(entry.category, entry.name, entry.scientific);
+    if (entry.category !== normalized) {
+      entry.category = normalized;
+      categoriesChanged = true;
+    }
+  });
+  if (categoriesChanged) store.save();
 
   document.getElementById('dex-total-discovered').textContent = total;
   document.getElementById('dex-count-heading').textContent = total;
-  document.getElementById('dex-progress-bar').style.width = `${Math.min(100, total)}%`;
+  document.getElementById('dex-progress-bar').style.width = `${total ? Math.min(100, total % 100 || 100) : 0}%`;
+  const milestoneLabel = document.getElementById('dex-milestone-label');
+  if (milestoneLabel) {
+    milestoneLabel.textContent = total >= 100
+      ? '🏅 CENTURY NATURALIST · NEXT 200'
+      : 'NEXT BADGE AT 100';
+    milestoneLabel.classList.toggle('milestone-earned', total >= 100);
+  }
 
   // Update Category Count Badges
-  const counts = { plant: 0, bird: 0, insect: 0, flower: 0, animal: 0, other: 0 };
+  const counts = { plant: 0, bird: 0, insect: 0, flower: 0, animal: 0, mushroom: 0, rock: 0, other: 0 };
   entries.forEach(e => {
     if (counts[e.category] !== undefined) counts[e.category]++;
     else counts.other++;
@@ -749,7 +765,8 @@ function renderPokedexScreen() {
     'cat-count-bird': counts.bird,
     'cat-count-insect': counts.insect,
     'cat-count-flower': counts.flower,
-    'cat-count-other': counts.other + counts.animal
+    'cat-count-animal': counts.animal,
+    'cat-count-other': counts.other
   };
   Object.entries(catMap).forEach(([id, val]) => {
     const el = document.getElementById(id);
@@ -813,53 +830,6 @@ function renderPokedexScreen() {
     emptyCard.addEventListener('click', () => navigateTo('scan'));
     grid.appendChild(emptyCard);
 
-  } else {
-    // 100 Field Guide mode
-    items = FIELD_GUIDE.filter(s => currentDexCategory === 'all' || s.category === currentDexCategory);
-
-    items.forEach((s, idx) => {
-      const found = state.pokedex[s.id];
-      const cat = categoryMeta[s.category] || categoryMeta.other;
-      const card = document.createElement('article');
-      card.className = `discovery-card ${found ? '' : 'locked'}`;
-
-      if (found) {
-        card.innerHTML = `
-          <div class="discovery-art sage">
-            ${found.photoData ? `<img src="${found.photoData}" alt="${s.name}">` : cat.emoji}
-            <span class="discovery-rarity">#${String(s.number).padStart(3, '0')}</span>
-            ${found.count > 1 ? `<span class="discovery-count-badge">×${found.count}</span>` : ''}
-          </div>
-          <div class="discovery-content">
-            <span class="quest-label">${cat.label}</span>
-            <h3>${s.name}</h3>
-            <p>${s.scientific}</p>
-            <div class="discovery-meta">
-              <span>📍 ${found.place || 'Discovered'}</span>
-              <span>${'★'.repeat(s.rarity)}</span>
-            </div>
-          </div>
-        `;
-        card.addEventListener('click', () => openSpeciesDetailSheet(found));
-      } else {
-        card.innerHTML = `
-          <div class="discovery-art" style="background: #eef1ea; opacity: 0.6;">
-            <span style="opacity: 0.3;">${cat.emoji}</span>
-            <span class="discovery-rarity">#${String(s.number).padStart(3, '0')}</span>
-          </div>
-          <div class="discovery-content">
-            <span class="quest-label">${cat.label}</span>
-            <h3 style="color: var(--muted);">???</h3>
-            <p>${s.region || 'Wild'}</p>
-            <div class="discovery-meta">
-              <span>Rarity: ${'★'.repeat(s.rarity)}</span>
-              <span>Unfound</span>
-            </div>
-          </div>
-        `;
-      }
-      grid.appendChild(card);
-    });
   }
 }
 
@@ -1242,26 +1212,6 @@ function bindEventHandlers() {
     });
   }
 
-  // Scanner: Try low-confidence example
-  const demoUncertain = document.getElementById('btn-demo-uncertain');
-  if (demoUncertain) {
-    demoUncertain.addEventListener('click', () => {
-      const mockResult = {
-        status: 'possible',
-        candidates: [
-          { name: 'Indian Banyan', scientific: 'Ficus benghalensis', category: 'plant', confidence: 71, rarity: 3 },
-          { name: 'Peepal Tree', scientific: 'Ficus religiosa', category: 'plant', confidence: 19, rarity: 2 },
-        ],
-        topCandidate: { name: 'Indian Banyan', scientific: 'Ficus benghalensis', category: 'plant', confidence: 71, rarity: 3 },
-        otherPercentage: 10
-      };
-      document.getElementById('scan-empty-state-view').style.display = 'none';
-      document.getElementById('scan-active-result-box').style.display = 'block';
-      renderScanResult(mockResult);
-      showToast('Field Guide found a few possible matches');
-    });
-  }
-
   // Pokédex: Category filters
   document.querySelectorAll('#dex-category-filters .cat-chip').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1271,24 +1221,6 @@ function bindEventHandlers() {
       renderPokedexScreen();
     });
   });
-
-  // Pokédex: Mode toggle (Mine vs Field Guide)
-  const modeMine = document.getElementById('btn-dex-mode-mine');
-  const modeGuide = document.getElementById('btn-dex-mode-guide');
-  if (modeMine && modeGuide) {
-    modeMine.addEventListener('click', () => {
-      modeMine.classList.add('active');
-      modeGuide.classList.remove('active');
-      currentDexMode = 'mine';
-      renderPokedexScreen();
-    });
-    modeGuide.addEventListener('click', () => {
-      modeGuide.classList.add('active');
-      modeMine.classList.remove('active');
-      currentDexMode = 'guide';
-      renderPokedexScreen();
-    });
-  }
 
   // Species Detail Sheet Close
   const closeSheet = document.getElementById('btn-close-sheet');

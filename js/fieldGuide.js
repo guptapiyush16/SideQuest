@@ -12,6 +12,14 @@ export const categoryMeta = {
   other: { emoji: '✨', label: 'Others', singular: 'Discovery', color: '#9DB7A8' }
 };
 
+export function normalizeCategory(category, name = '', scientific = '') {
+  const value = `${category || ''} ${name} ${scientific}`.toLowerCase();
+  if (category === 'animal' || /(animal|dog|puppy|canine|cat|kitten|feline|mammal|pet|cow|horse|goat|deer|fox|monkey|rabbit|squirrel)/i.test(value)) {
+    return 'animal';
+  }
+  return categoryMeta[category] ? category : 'other';
+}
+
 export const RAW_SPECIES = [
   // 🌳 Plants & Trees (30)
   ['Indian Banyan', 'Ficus benghalensis', 'plant', 3, 'Native to Indian Subcontinent', 'National tree of India with sprawling aerial prop roots that can live for centuries.'],
